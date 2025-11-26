@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatle – Random Chat</title>
+    <meta name="theme-color" content="#000000">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 420px;
+            background: #111;
+            border-radius: 24px;
+            padding: 32px 24px;
+            box-shadow: 0 20px 40px rgba(0, 255, 255, 0.15);
+            border: 1px solid #222;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            margin: 0 0 32px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+        .profile {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .profile img {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 4px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
+        .username {
+            margin-top: 12px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 32px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        label {
+            display: block;
+            margin: 20px 0 8px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.2);
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .country-selector {
+            position: relative;
+        }
+        #country-search {
+            padding-right: 40px;
+        }
+        #country-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        .country-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .country-option:hover {
+            background: #222;
+        }
+        button {
+            width: 100%;
+            padding: 18px;
+            margin-top: 32px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            color: #000;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .required {
+            color: #ff00ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Content will be injected by JS -->
+    </div>
+
+    <script>
+        // Telegram WebApp kontrolü
+        if (!window.Telegram?.WebApp) {
+            document.body.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;color:#ff00ff;">
+                    <h1>Access Denied</h1>
+                    <p>Please open this page from the Telegram bot.</p>
+                </div>`;
+            throw new Error("Not in Telegram WebApp");
+        }
+
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        if (!user) {
+            alert("User data not found");
+            Telegram.WebApp.close();
+        }
+
+        const displayName = user.username ? `@\( {user.username}` : ` \){user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+        const photoUrl = user.photo_url || "https://via.placeholder.com/96/111/fff?text=👤";
+
+        // Tüm ülkeler (bayrak + isim + ISO kodu)
+        const countries = [
+            {name: "Afghanistan", flag: "🇦🇫", code: "AF"},
+            {name: "Albania", flag: "🇦🇱", code: "AL"},
+            {name: "Algeria", flag: "🇩🇿", code: "DZ"},
+            {name: "Argentina", flag: "🇦🇷", code: "AR"},
+            {name: "Armenia", flag: "🇦🇲", code: "AM"},
+            {name: "Australia", flag: "🇦🇺", code: "AU"},
+            {name: "Austria", flag: "🇦🇹", code: "AT"},
+            {name: "Azerbaijan", flag: "🇦🇿", code: "AZ"},
+            {name: "Bangladesh", flag: "🇧🇩", code: "BD"},
+            {name: "Belarus", flag: "🇧🇾", code: "BY"},
+            {name: "Belgium", flag: "🇧🇪", code: "BE"},
+            {name: "Brazil", flag: "🇧🇷", code: "BR"},
+            {name: "Bulgaria", flag: "🇧🇬", code: "BG"},
+            {name: "Canada", flag: "🇨🇦", code: "CA"},
+            {name: "Chile", flag: "🇨🇱", code: "CL"},
+            {name: "China", flag: "🇨🇳", code: "CN"},
+            {name: "Colombia", flag: "🇨🇴", code: "CO"},
+            {name: "Croatia", flag: "🇭🇷", code: "HR"},
+            {name: "Czechia", flag: "🇨🇿", code: "CZ"},
+            {name: "Egypt", flag: "🇪🇬", code: "EG"},
+            {name: "France", flag: "🇫🇷", code: "FR"},
+            {name: "Georgia", flag: "🇬🇪", code: "GE"},
+            {name: "Germany", flag: "🇩🇪", code: "DE"},
+            {name: "Greece", flag: "🇬🇷", code: "GR"},
+            {name: "Hungary", flag: "🇭🇺", code: "HU"},
+            {name: "India", flag: "🇮🇳", code: "IN"},
+            {name: "Indonesia", flag: "🇮🇩", code: "ID"},
+            {name: "Iran", flag: "🇮🇷", code: "IR"},
+            {name: "Iraq", flag: "🇮🇶", code: "IQ"},
+            {name: "Italy", flag: "🇮🇹", code: "IT"},
+            {name: "Japan", flag: "🇯🇵", code: "JP"},
+            {name: "Kazakhstan", flag: "🇰🇿", code: "KZ"},
+            {name: "Korea", flag: "🇰🇷", code: "KR"},
+            {name: "Mexico", flag: "🇲🇽", code: "MX"},
+            {name: "Morocco", flag: "🇲🇦", code: "MA"},
+            {name: "Netherlands", flag: "🇳🇱", code: "NL"},
+            {name: "Nigeria", flag: "🇳🇬", code: "NG"},
+            {name: "Pakistan", flag: "🇵🇰", code: "PK"},
+            {name: "Peru", flag: "🇵🇪", code: "PE"},
+            {name: "Philippines", flag: "🇵🇭", code: "PH"},
+            {name: "Poland", flag: "🇵🇱", code: "PL"},
+            {name: "Portugal", flag: "🇵🇹", code: "PT"},
+            {name: "Romania", flag: "🇷🇴", code: "RO"},
+            {name: "Russia", flag: "🇷🇺", code: "RU"},
+            {name: "Saudi Arabia", flag: "🇸🇦", code: "SA"},
+            {name: "Serbia", flag: "🇷🇸", code: "RS"},
+            {name: "South Africa", flag: "🇿🇦", code: "ZA"},
+            {name: "Spain", flag: "🇪🇸", code: "ES"},
+            {name: "Sweden", flag: "🇸🇪", code: "SE"},
+            {name: "Thailand", flag: "🇹🇭", code: "TH"},
+            {name: "Turkey", flag: "🇹🇷", code: "TR"},
+            {name: "Ukraine", flag: "🇺🇦", code: "UA"},
+            {name: "United Arab Emirates", flag: "🇦🇪", code: "AE"},
+            {name: "United Kingdom", flag: "🇬🇧", code: "GB"},
+            {name: "United States", flag: "🇺🇸", code: "US"},
+            {name: "Uzbekistan", flag: "🇺🇿", code: "UZ"},
+            {name: "Venezuela", flag: "🇻🇪", code: "VE"},
+            {name: "Vietnam", flag: "🇻🇳", code: "VN"}
+            // İstersen daha fazla ülke ekleyebilirsin (195+ tane var, hepsini eklemek uzun olur ama gerekirse tamamlarım)
+        ].sort((a, b) => a.name.localeCompare(b.name));
+
+        // Eğer profil zaten varsa direkt /chat'e yönlendir
+        Telegram.WebApp.CloudStorage.getItem('profile', (err, savedProfile) => {
+            if (savedProfile) {
+                window.location.href = '/chat';
+                return;
+            }
+
+            // HTML içeriği
+            document.getElementById('app').innerHTML = `
+                <h1>Chatle</h1>
+                <div class="profile">
+                    <img src="${photoUrl}" alt="Profile Picture">
+                    <div class="username">Hello, ${displayName}</div>
+                </div>
+                <div class="welcome-text">
+                    Welcome to Chatle! Please complete your profile to start meeting new people around the world.
+                </div>
+                <form id="profileForm">
+                    <label>Nickname <span class="required">(required)</span></label>
+                    <input type="text" id="nickname" placeholder="Choose a cool nickname" required autocomplete="off">
+
+                    <label>Age <span class="required">(required)</span></label>
+                    <input type="number" id="age" placeholder="18" min="13" max="99" required>
+
+                    <label>Gender <span class="required">(required)</span></label>
+                    <select id="gender" required>
+                        <option value="" disabled selected>Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other / Prefer not to say</option>
+                    </select>
+
+                    <label>Country <span class="required">(required)</span></label>
+                    <div class="country-selector">
+                        <input type="text" id="country-search" placeholder="Search your country..." autocomplete="off">
+                        <div id="country-list"></div>
+                    </div>
+                    <input type="hidden" id="selected-country">
+
+                    <label>Bio <span style="opacity:0.6">(optional)</span></label>
+                    <textarea id="bio" placeholder="Tell something about yourself... (hobbies, what you're looking for, etc.)"></textarea>
+
+                    <button type="submit">Start Chatting</button>
+                </form>
+            `;
+
+            // Ülke arama
+            const countrySearch = document.getElementById('country-search');
+            const countryList = document.getElementById('country-list');
+            const selectedCountryInput = document.getElementById('selected-country');
+
+            countrySearch.addEventListener('focus', () => showCountries(''));
+            countrySearch.addEventListener('input', (e) => showCountries(e.target.value));
+
+            function showCountries(query) {
+                countryList.innerHTML = '';
+                const filtered = countries.filter(c => 
+                    c.name.toLowerCase().includes(query.toLowerCase()) ||
+                    c.code.toLowerCase().includes(query.toLowerCase())
+                );
+
+                if (filtered.length === 0) {
+                    countryList.style.display = 'none';
+                    return;
+                }
+
+                filtered.forEach(country => {
+                    const div = document.createElement('div');
+                    div.className = 'country-option';
+                    div.textContent = `\( {country.flag} \){country.name}`;
+                    div.onclick = () => {
+                        countrySearch.value = `\( {country.flag} \){country.name}`;
+                        selectedCountryInput.value = country.code;
+                        countryList.style.display = 'none';
+                    };
+                    countryList.appendChild(div);
+                });
+                countryList.style.display = 'block';
+            }
+
+            // Dışarı tıklayınca kapatma
+            document.addEventListener('click', (e) => {
+                if (!countrySearch.contains(e.target) && !countryList.contains(e.target)) {
+                    countryList.style.display = 'none';
+                }
+            });
+
+            // Form gönderimi
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                if (!selectedCountryInput.value) {
+                    alert('Please select your country');
+                    return;
+                }
+
+                const profile = {
+                    nickname: document.getElementById('nickname').value.trim(),
+                    age: parseInt(document.getElementById('age').value),
+                    gender: document.getElementById('gender').value,
+                    country: selectedCountryInput.value,
+                    countryName: countrySearch.value,
+                    bio: document.getElementById('bio').value.trim(),
+                    telegramId: user.id,
+                    username: user.username || null,
+                    firstName: user.first_name,
+                    lastName: user.last_name || null,
+                    photoUrl: user.photo_url || null,
+                    savedAt: new Date().toISOString()
+                };
+
+                // CloudStorage'a kaydet (her kullanıcıya özel kalıcı depolama)
+                Telegram.WebApp.CloudStorage.setItem('profile', JSON.stringify(profile), (err, success) => {
+                    if (success) {
+                        window.location.href = '/chat';
+                    } else {
+                        alert('Failed to save profile. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
