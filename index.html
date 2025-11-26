@@ -41,47 +41,58 @@
         }
 
         .logo {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 900;
-            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            background: linear-gradient(135deg, #00d4ff, #3366ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin: 0 0 12px;
+            margin: 0 0 8px;
             letter-spacing: -2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .logo-emoji {
+            font-size: 64px;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.6));
         }
 
         .subtitle {
-            font-size: 16px;
-            opacity: 0.7;
+            font-size: 17px;
+            opacity: 0.8;
             margin: 0;
+            font-weight: 500;
         }
 
         .profile-card {
             background: var(--tg-secondary);
-            border-radius: 24px;
-            padding: 24px;
+            border-radius: 28px;
+            padding: 28px 24px;
             text-align: center;
-            margin-bottom: 32px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 36px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
         }
 
         .avatar {
-            width: 96px;
-            height: 96px;
+            width: 104px;
+            height: 104px;
             border-radius: 50%;
-            border: 4px solid var(--tg-button);
-            box-shadow: 0 0 30px rgba(0, 136, 204, 0.4);
-            margin-bottom: 16px;
+            border: 5px solid var(--tg-button);
+            box-shadow: 0 0 40px rgba(0, 136, 204, 0.5);
+            margin-bottom: 20px;
         }
 
         .greeting {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             margin: 0 0 8px;
         }
 
-        .username {
+        .info {
             font-size: 16px;
             opacity: 0.7;
         }
@@ -92,21 +103,22 @@
 
         label {
             display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-size: 15px;
             font-weight: 500;
-            opacity: 0.8;
+            opacity: 0.85;
         }
 
         input, select, textarea {
             width: 100%;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            padding: 17px 18px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
             color: var(--tg-text);
             font-size: 17px;
             backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
 
         input::placeholder, textarea::placeholder {
@@ -116,20 +128,16 @@
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--tg-button);
-            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.2);
+            box-shadow: 0 0 0 4px rgba(0, 136, 204, 0.25);
         }
 
         textarea {
-            min-height: 100px;
+            min-height: 110px;
             resize: none;
         }
 
         .country-input {
             position: relative;
-        }
-
-        #country-search {
-            padding-right: 50px;
         }
 
         #country-list {
@@ -138,41 +146,44 @@
             left: 0;
             right: 0;
             background: var(--tg-secondary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            max-height: 280px;
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            max-height: 320px;
             overflow-y: auto;
             z-index: 10;
-            display: none;
             margin-top: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            display: none;
         }
 
         .country-item {
-            padding: 14px 16px;
+            padding: 16px 18px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.25s;
             font-size: 17px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .country-item:last-child {
+            border-bottom: none;
         }
 
         .country-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .required {
             color: #ff4444;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <!-- JS ile doldurulacak -->
-    </div>
+    <div class="container" id="app"></div>
 
     <script>
-        // Sadece Telegram'dan açılırsa çalışsın
         if (!window.Telegram?.WebApp) {
-            document.body.innerHTML = `<div style="text-align:center;padding:50px;color:#ff4444;"><h1>Access Denied</h1><p>This app can only be opened from Telegram.</p></div>`;
+            document.body.innerHTML = `<div style="text-align:center;padding:80px;color:#ff4444;"><h1>Access Denied</h1><p>Open from Telegram</p></div>`;
             throw new Error("Not in Telegram");
         }
 
@@ -182,126 +193,32 @@
         const tg = Telegram.WebApp;
         const user = tg.initDataUnsafe.user;
 
-        if (!user) {
-            alert("User data not found");
-            tg.close();
-        }
-
-        // Kullanıcı adı yoksa ismini kullan
         const displayName = user.username ? `@\( {user.username}` : user.first_name + (user.last_name ? ` \){user.last_name}` : '');
         const photoUrl = user.photo_url || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
 
-        // Tüm ülkeler (tam liste - 195+ ülke, sıralı)
-        const countries = [
-            {"name":"Afghanistan","flag":"🇦🇫","code":"AF"},{"name":"Albania","flag":"🇦🇱","code":"AL"},
-            {"name":"Algeria","flag":"🇩🇿","code":"DZ"},{"name":"Andorra","flag":"🇦🇩","code":"AD"},
-            {"name":"Angola","flag":"🇦🇴","code":"AO"},{"name":"Argentina","flag":"🇦🇷","code":"AR"},
-            {"name":"Armenia","flag":"🇦🇲","code":"AM"},{"name":"Australia","flag":"🇦🇺","code":"AU"},
-            {"name":"Austria","flag":"🇦🇹","code":"AT"},{"name":"Azerbaijan","flag":"🇦🇿","code":"AZ"},
-            {"name":"Bahamas","flag":"🇧🇸","code":"BS"},{"name":"Bahrain","flag":"🇧🇭","code":"BH"},
-            {"name":"Bangladesh","flag":"🇧🇩","code":"BD"},{"name":"Barbados","flag":"🇧🇧","code":"BB"},
-            {"name":"Belarus","flag":"🇧🇾","code":"BY"},{"name":"Belgium","flag":"🇧🇪","code":"BE"},
-            {"name":"Belize","flag":"🇧🇿","code":"BZ"},{"name":"Benin","flag":"🇧🇯","code":"BJ"},
-            {"name":"Bhutan","flag":"🇧🇹","code":"BT"},{"name":"Bolivia","flag":"🇧🇴","code":"BO"},
-            {"name":"Bosnia and Herzegovina","flag":"🇧🇦","code":"BA"},{"name":"Botswana","flag":"🇧🇼","code":"BW"},
-            {"name":"Brazil","flag":"🇧🇷","code":"BR"},{"name":"Brunei","flag":"🇧🇳","code":"BN"},
-            {"name":"Bulgaria","flag":"🇧🇬","code":"BG"},{"name":"Burkina Faso","flag":"🇧🇫","code":"BF"},
-            {"name":"Burundi","flag":"🇧🇮","code":"BI"},{"name":"Cambodia","flag":"🇰🇭","code":"KH"},
-            {"name":"Cameroon","flag":"🇨🇲","code":"CM"},{"name":"Canada","flag":"🇨🇦","code":"CA"},
-            {"name":"Cape Verde","flag":"🇨🇻","code":"CV"},{"name":"Chad","flag":"🇹🇩","code":"TD"},
-            {"name":"Chile","flag":"🇨🇱","code":"CL"},{"name":"China","flag":"🇨🇳","code":"CN"},
-            {"name":"Colombia","flag":"🇨🇴","code":"CO"},{"name":"Comoros","flag":"🇰🇲","code":"KM"},
-            {"name":"Congo (Dem. Rep.)","flag":"🇨🇩","code":"CD"},{"name":"Congo (Rep.)","flag":"🇨🇬","code":"CG"},
-            {"name":"Costa Rica","flag":"🇨🇷","code":"CR"},{"name":"Croatia","flag":"🇭🇷","code":"HR"},
-            {"name":"Cuba","flag":"🇨🇺","code":"CU"},{"name":"Cyprus","flag":"🇨🇾","code":"CY"},
-            {"name":"Czechia","flag":"🇨🇿","code":"CZ"},{"name":"Denmark","flag":"🇩🇰","code":"DK"},
-            {"name":"Djibouti","flag":"🇩🇯","code":"DJ"},{"name":"Dominica","flag":"🇩🇲","code":"DM"},
-            {"name":"Dominican Republic","flag":"🇩🇴","code":"DO"},{"name":"Ecuador","flag":"🇪🇨","code":"EC"},
-            {"name":"Egypt","flag":"🇪🇬","code":"EG"},{"name":"El Salvador","flag":"🇸🇻","code":"SV"},
-            {"name":"Estonia","flag":"🇪🇪","code":"EE"},{"name":"Ethiopia","flag":"🇪🇹","code":"ET"},
-            {"name":"Fiji","flag":"🇫🇯","code":"FJ"},{"name":"Finland","flag":"🇫🇮","code":"FI"},
-            {"name":"France","flag":"🇫🇷","code":"FR"},{"name":"Gabon","flag":"🇬🇦","code":"GA"},
-            {"name":"Gambia","flag":"🇬🇲","code":"GM"},{"name":"Georgia","flag":"🇬🇪","code":"GE"},
-            {"name":"Germany","flag":"🇩🇪","code":"DE"},{"name":"Ghana","flag":"🇬🇭","code":"GH"},
-            {"name":"Greece","flag":"🇬🇷","code":"GR"},{"name":"Grenada","flag":"🇬🇩","code":"GD"},
-            {"name":"Guatemala","flag":"🇬🇹","code":"GT"},{"name":"Guinea","flag":"🇬🇳","code":"GN"},
-            {"name":"Guyana","flag":"🇬🇾","code":"GY"},{"name":"Haiti","flag":"🇭🇹","code":"HT"},
-            {"name":"Honduras","flag":"🇭🇳","code":"HN"},{"name":"Hungary","flag":"🇭🇺","code":"HU"},
-            {"name":"Iceland","flag":"🇮🇸","code":"IS"},{"name":"India","flag":"🇮🇳","code":"IN"},
-            {"name":"Indonesia","flag":"🇮🇩","code":"ID"},{"name":"Iran","flag":"🇮🇷","code":"IR"},
-            {"name":"Iraq","flag":"🇮🇶","code":"IQ"},{"name":"Ireland","flag":"🇮🇪","code":"IE"},
-            {"name":"Israel","flag":"🇮🇱","code":"IL"},{"name":"Italy","flag":"🇮🇹","code":"IT"},
-            {"name":"Jamaica","flag":"🇯🇲","code":"JM"},{"name":"Japan","flag":"🇯🇵","code":"JP"},
-            {"name":"Jordan","flag":"🇯🇴","code":"JO"},{"name":"Kazakhstan","flag":"🇰🇿","code":"KZ"},
-            {"name":"Kenya","flag":"🇰🇪","code":"KE"},{"name":"Kiribati","flag":"🇰🇮","code":"KI"},
-            {"name":"Kuwait","flag":"🇰🇼","code":"KW"},{"name":"Kyrgyzstan","flag":"🇰🇬","code":"KG"},
-            {"name":"Laos","flag":"🇱🇦","code":"LA"},{"name":"Latvia","flag":"🇱🇻","code":"LV"},
-            {"name":"Lebanon","flag":"🇱🇧","code":"LB"},{"name":"Lesotho","flag":"🇱🇸","code":"LS"},
-            {"name":"Liberia","flag":"🇱🇷","code":"LR"},{"name":"Libya","flag":"🇱🇾","code":"LY"},
-            {"name":"Liechtenstein","flag":"🇱🇮","code":"LI"},{"name":"Lithuania","flag":"🇱🇹","code":"LT"},
-            {"name":"Luxembourg","flag":"🇱🇺","code":"LU"},{"name":"Madagascar","flag":"🇲🇬","code":"MG"},
-            {"name":"Malawi","flag":"🇲🇼","code":"MW"},{"name":"Malaysia","flag":"🇲🇾","code":"MY"},
-            {"name":"Maldives","flag":"🇲🇻","code":"MV"},{"name":"Mali","flag":"🇲🇱","code":"ML"},
-            {"name":"Malta","flag":"🇲🇹","code":"MT"},{"name":"Mexico","flag":"🇲🇽","code":"MX"},
-            {"name":"Monaco","flag":"🇲🇨","code":"MC"},{"name":"Mongolia","flag":"🇲🇳","code":"MN"},
-            {"name":"Montenegro","flag":"🇲🇪","code":"ME"},{"name":"Morocco","flag":"🇲🇦","code":"MA"},
-            {"name":"Mozambique","flag":"🇲🇿","code":"MZ"},{"name":"Myanmar","flag":"🇲🇲","code":"MM"},
-            {"name":"Namibia","flag":"🇳🇦","code":"NA"},{"name":"Nauru","flag":"🇳🇷","code":"NR"},
-            {"name":"Nepal","flag":"🇳🇵","code":"NP"},{"name":"Netherlands","flag":"🇳🇱","code":"NL"},
-            {"name":"New Zealand","flag":"🇳🇿","code":"NZ"},{"name":"Nicaragua","flag":"🇳🇮","code":"NI"},
-            {"name":"Niger","flag":"🇳🇪","code":"NE"},{"name":"Nigeria","flag":"🇳🇬","code":"NG"},
-            {"name":"North Korea","flag":"🇰🇵","code":"KP"},{"name":"North Macedonia","flag":"🇲🇰","code":"MK"},
-            {"name":"Norway","flag":"🇳🇴","code":"NO"},{"name":"Oman","flag":"🇴🇲","code":"OM"},
-            {"name":"Pakistan","flag":"🇵🇰","code":"PK"},{"name":"Palau","flag":"🇵🇼","code":"PW"},
-            {"name":"Palestine","flag":"🇵🇸","code":"PS"},{"name":"Panama","flag":"🇵🇦","code":"PA"},
-            {"name":"Paraguay","flag":"🇵🇾","code":"PY"},{"name":"Peru","flag":"🇵🇪","code":"PE"},
-            {"name":"Philippines","flag":"🇵🇭","code":"PH"},{"name":"Poland","flag":"🇵🇱","code":"PL"},
-            {"name":"Portugal","flag":"🇵🇹","code":"PT"},{"name":"Qatar","flag":"🇶🇦","code":"QA"},
-            {"name":"Romania","flag":"🇷🇴","code":"RO"},{"name":"Russia","flag":"🇷🇺","code":"RU"},
-            {"name":"Rwanda","flag":"🇷🇼","code":"RW"},{"name":"Saint Lucia","flag":"🇱🇨","code":"LC"},
-            {"name":"San Marino","flag":"🇸🇲","code":"SM"},{"name":"Saudi Arabia","flag":"🇸🇦","code":"SA"},
-            {"name":"Senegal","flag":"🇸🇳","code":"SN"},{"name":"Serbia","flag":"🇷🇸","code":"RS"},
-            {"name":"Seychelles","flag":"🇸🇨","code":"SC"},{"name":"Singapore","flag":"🇸🇬","code":"SG"},
-            {"name":"Slovakia","flag":"🇸🇰","code":"SK"},{"name":"Slovenia","flag":"🇸🇮","code":"SI"},
-            {"name":"South Africa","flag":"🇿🇦","code":"ZA"},{"name":"South Korea","flag":"🇰🇷","code":"KR"},
-            {"name":"Spain","flag":"🇪🇸","code":"ES"},{"name":"Sweden","flag":"🇸🇪","code":"SE"},
-            {"name":"Switzerland","flag":"🇨🇭","code":"CH"},{"name":"Syria","flag":"🇸🇾","code":"SY"},
-            {"name":"Taiwan","flag":"🇹🇼","code":"TW"},{"name":"Tajikistan","flag":"🇹🇯","code":"TJ"},
-            {"name":"Tanzania","flag":"🇹🇿","code":"TZ"},{"name":"Thailand","flag":"🇹🇭","code":"TH"},
-            {"name":"Togo","flag":"🇹🇬","code":"TG"},{"name":"Tonga","flag":"🇹🇴","code":"TO"},
-            {"name":"Tunisia","flag":"🇹🇳","code":"TN"},{"name":"Turkey","flag":"🇹🇷","code":"TR"},
-            {"name":"Turkmenistan","flag":"🇹🇲","code":"TM"},{"name":"Uganda","flag":"🇺🇬","code":"UG"},
-            {"name":"Ukraine","flag":"🇺🇦","code":"UA"},{"name":"United Arab Emirates","flag":"🇦🇪","code":"AE"},
-            {"name":"United Kingdom","flag":"🇬🇧","code":"GB"},{"name":"United States","flag":"🇺🇸","code":"US"},
-            {"name":"Uruguay","flag":"🇺🇾","code":"UY"},{"name":"Uzbekistan","flag":"🇺🇿","code":"UZ"},
-            {"name":"Vatican City","flag":"🇻🇦","code":"VA"},{"name":"Venezuela","flag":"🇻🇪","code":"VE"},
-            {"name":"Vietnam","flag":"🇻🇳","code":"VN"},{"name":"Yemen","flag":"🇾🇪","code":"YE"},
-            {"name":"Zambia","flag":"🇿🇲","code":"ZM"},{"name":"Zimbabwe","flag":"🇿🇼","code":"ZW"}
-        ].sort((a, b) => a.name.localeCompare(b.name));
+        const countries = [{"name":"Afghanistan","flag":"🇦🇫","code":"AF"},{"name":"Albania","flag":"🇦🇱","code":"AL"},{"name":"Algeria","flag":"🇩🇿","code":"DZ"},{"name":"Andorra","flag":"🇦🇩","code":"AD"},{"name":"Angola","flag":"🇦🇴","code":"AO"},{"name":"Argentina","flag":"🇦🇷","code":"AR"},{"name":"Armenia","flag":"🇦🇲","code":"AM"},{"name":"Australia","flag":"🇦🇺","code":"AU"},{"name":"Austria","flag":"🇦🇹","code":"AT"},{"name":"Azerbaijan","flag":"🇦🇿","code":"AZ"},{"name":"Bahamas","flag":"🇧🇸","code":"BS"},{"name":"Bahrain","flag":"🇧🇭","code":"BH"},{"name":"Bangladesh","flag":"🇧🇩","code":"BD"},{"name":"Barbados","flag":"🇧🇧","code":"BB"},{"name":"Belarus","flag":"🇧🇾","code":"BY"},{"name":"Belgium","flag":"🇧🇪","code":"BE"},{"name":"Belize","flag":"🇧🇿","code":"BZ"},{"name":"Benin","flag":"🇧🇯","code":"BJ"},{"name":"Bhutan","flag":"🇧🇹","code":"BT"},{"name":"Bolivia","flag":"🇧🇴","code":"BO"},{"name":"Bosnia and Herzegovina","flag":"🇧🇦","code":"BA"},{"name":"Botswana","flag":"🇧🇼","code":"BW"},{"name":"Brazil","flag":"🇧🇷","code":"BR"},{"name":"Brunei","flag":"🇧🇳","code":"BN"},{"name":"Bulgaria","flag":"🇧🇬","code":"BG"},{"name":"Burkina Faso","flag":"🇧🇫","code":"BF"},{"name":"Burundi","flag":"🇧🇮","code":"BI"},{"name":"Cambodia","flag":"🇰🇭","code":"KH"},{"name":"Cameroon","flag":"🇨🇲","code":"CM"},{"name":"Canada","flag":"🇨🇦","code":"CA"},{"name":"Cape Verde","flag":"🇨🇻","code":"CV"},{"name":"Chad","flag":"🇹🇩","code":"TD"},{"name":"Chile","flag":"🇨🇱","code":"CL"},{"name":"China","flag":"🇨🇳","code":"CN"},{"name":"Colombia","flag":"🇨🇴","code":"CO"},{"name":"Comoros","flag":"🇰🇲","code":"KM"},{"name":"Congo (Dem. Rep.)","flag":"🇨🇩","code":"CD"},{"name":"Congo (Rep.)","flag":"🇨🇬","code":"CG"},{"name":"Costa Rica","flag":"🇨🇷","code":"CR"},{"name":"Croatia","flag":"🇭🇷","code":"HR"},{"name":"Cuba","flag":"🇨🇺","code":"CU"},{"name":"Cyprus","flag":"🇨🇾","code":"CY"},{"name":"Czechia","flag":"🇨🇿","code":"CZ"},{"name":"Denmark","flag":"🇩🇰","code":"DK"},{"name":"Djibouti","flag":"🇩🇯","code":"DJ"},{"name":"Dominica","flag":"🇩🇲","code":"DM"},{"name":"Dominican Republic","flag":"🇩🇴","code":"DO"},{"name":"Ecuador","flag":"🇪🇨","code":"EC"},{"name":"Egypt","flag":"🇪🇬","code":"EG"},{"name":"El Salvador","flag":"🇸🇻","code":"SV"},{"name":"Estonia","flag":"🇪🇪","code":"EE"},{"name":"Ethiopia","flag":"🇪🇹","code":"ET"},{"name":"Fiji","flag":"🇫🇯","code":"FJ"},{"name":"Finland","flag":"🇫🇮","code":"FI"},{"name":"France","flag":"🇫🇷","code":"FR"},{"name":"Gabon","flag":"🇬🇦","code":"GA"},{"name":"Gambia","flag":"🇬🇲","code":"GM"},{"name":"Georgia","flag":"🇬🇪","code":"GE"},{"name":"Germany","flag":"🇩🇪","code":"DE"},{"name":"Ghana","flag":"🇬🇭","code":"GH"},{"name":"Greece","flag":"🇬🇷","code":"GR"},{"name":"Grenada","flag":"🇬🇩","code":"GD"},{"name":"Guatemala","flag":"🇬🇹","code":"GT"},{"name":"Guinea","flag":"🇬🇳","code":"GN"},{"name":"Guyana","flag":"🇬🇾","code":"GY"},{"name":"Haiti","flag":"🇭🇹","code":"HT"},{"name":"Honduras","flag":"🇭🇳","code":"HN"},{"name":"Hungary","flag":"🇭🇺","code":"HU"},{"name":"Iceland","flag":"🇮🇸","code":"IS"},{"name":"India","flag":"🇮🇳","code":"IN"},{"name":"Indonesia","flag":"🇮🇩","code":"ID"},{"name":"Iran","flag":"🇮🇷","code":"IR"},{"name":"Iraq","flag":"🇮🇶","code":"IQ"},{"name":"Ireland","flag":"🇮🇪","code":"IE"},{"name":"Israel","flag":"🇮🇱","code":"IL"},{"name":"Italy","flag":"🇮🇹","code":"IT"},{"name":"Jamaica","flag":"🇯🇲","code":"JM"},{"name":"Japan","flag":"🇯🇵","code":"JP"},{"name":"Jordan","flag":"🇯🇴","code":"JO"},{"name":"Kazakhstan","flag":"🇰🇿","code":"KZ"},{"name":"Kenya","flag":"🇰🇪","code":"KE"},{"name":"Kiribati","flag":"🇰🇮","code":"KI"},{"name":"Kuwait","flag":"🇰🇼","code":"KW"},{"name":"Kyrgyzstan","flag":"🇰🇬","code":"KG"},{"name":"Laos","flag":"🇱🇦","code":"LA"},{"name":"Latvia","flag":"🇱🇻","code":"LV"},{"name":"Lebanon","flag":"🇱🇧","code":"LB"},{"name":"Lesotho","flag":"🇱🇸","code":"LS"},{"name":"Liberia","flag":"🇱🇷","code":"LR"},{"name":"Libya","flag":"🇱🇾","code":"LY"},{"name":"Liechtenstein","flag":"🇱🇮","code":"LI"},{"name":"Lithuania","flag":"🇱🇹","code":"LT"},{"name":"Luxembourg","flag":"🇱🇺","code":"LU"},{"name":"Madagascar","flag":"🇲🇬","code":"MG"},{"name":"Malawi","flag":"🇲🇼","code":"MW"},{"name":"Malaysia","flag":"🇲🇾","code":"MY"},{"name":"Maldives","flag":"🇲🇻","code":"MV"},{"name":"Mali","flag":"🇲🇱","code":"ML"},{"name":"Malta","flag":"🇲🇹","code":"MT"},{"name":"Mexico","flag":"🇲🇽","code":"MX"},{"name":"Monaco","flag":"🇲🇨","code":"MC"},{"name":"Mongolia","flag":"🇲🇳","code":"MN"},{"name":"Montenegro","flag":"🇲🇪","code":"ME"},{"name":"Morocco","flag":"🇲🇦","code":"MA"},{"name":"Mozambique","flag":"🇲🇿","code":"MZ"},{"name":"Myanmar","flag":"🇲🇲","code":"MM"},{"name":"Namibia","flag":"🇳🇦","code":"NA"},{"name":"Nauru","flag":"🇳🇷","code":"NR"},{"name":"Nepal","flag":"🇳🇵","code":"NP"},{"name":"Netherlands","flag":"🇳🇱","code":"NL"},{"name":"New Zealand","flag":"🇳🇿","code":"NZ"},{"name":"Nicaragua","flag":"🇳🇮","code":"NI"},{"name":"Niger","flag":"🇳🇪","code":"NE"},{"name":"Nigeria","flag":"🇳🇬","code":"NG"},{"name":"North Korea","flag":"🇰🇵","code":"KP"},{"name":"North Macedonia","flag":"🇲🇰","code":"MK"},{"name":"Norway","flag":"🇳🇴","code":"NO"},{"name":"Oman","flag":"🇴🇲","code":"OM"},{"name":"Pakistan","flag":"🇵🇰","code":"PK"},{"name":"Palau","flag":"🇵🇼","code":"PW"},{"name":"Palestine","flag":"🇵🇸","code":"PS"},{"name":"Panama","flag":"🇵🇦","code":"PA"},{"name":"Paraguay","flag":"🇵🇾","code":"PY"},{"name":"Peru","flag":"🇵🇪","code":"PE"},{"name":"Philippines","flag":"🇵🇭","code":"PH"},{"name":"Poland","flag":"🇵🇱","code":"PL"},{"name":"Portugal","flag":"🇵🇹","code":"PT"},{"name":"Qatar","flag":"🇶🇦","code":"QA"},{"name":"Romania","flag":"🇷🇴","code":"RO"},{"name":"Russia","flag":"🇷🇺","code":"RU"},{"name":"Rwanda","flag":"🇷🇼","code":"RW"},{"name":"Saint Lucia","flag":"🇱🇨","code":"LC"},{"name":"San Marino","flag":"🇸🇲","code":"SM"},{"name":"Saudi Arabia","flag":"🇸🇦","code":"SA"},{"name":"Senegal","flag":"🇸🇳","code":"SN"},{"name":"Serbia","flag":"🇷🇸","code":"RS"},{"name":"Seychelles","flag":"🇸🇨","code":"SC"},{"name":"Singapore","flag":"🇸🇬","code":"SG"},{"name":"Slovakia","flag":"🇸🇰","code":"SK"},{"name":"Slovenia","flag":"🇸🇮","code":"SI"},{"name":"South Africa","flag":"🇿🇦","code":"ZA"},{"name":"South Korea","flag":"🇰🇷","code":"KR"},{"name":"Spain","flag":"🇪🇸","code":"ES"},{"name":"Sweden","flag":"🇸🇪","code":"SE"},{"name":"Switzerland","flag":"🇨🇭","code":"CH"},{"name":"Syria","flag":"🇸🇾","code":"SY"},{"name":"Taiwan","flag":"🇹🇼","code":"TW"},{"name":"Tajikistan","flag":"🇹🇯","code":"TJ"},{"name":"Tanzania","flag":"🇹🇿","code":"TZ"},{"name":"Thailand","flag":"🇹🇭","code":"TH"},{"name":"Togo","flag":"🇹🇬","code":"TG"},{"name":"Tonga","flag":"🇹🇴","code":"TO"},{"name":"Tunisia","flag":"🇹🇳","code":"TN"},{"name":"Turkey","flag":"🇹🇷","code":"TR"},{"name":"Turkmenistan","flag":"🇹🇲","code":"TM"},{"name":"Uganda","flag":"🇺🇬","code":"UG"},{"name":"Ukraine","flag":"🇺🇦","code":"UA"},{"name":"United Arab Emirates","flag":"🇦🇪","code":"AE"},{"name":"United Kingdom","flag":"🇬🇧","code":"GB"},{"name":"United States","flag":"🇺🇸","code":"US"},{"name":"Uruguay","flag":"🇺🇾","code":"UY"},{"name":"Uzbekistan","flag":"🇺🇿","code":"UZ"},{"name":"Vatican City","flag":"🇻🇦","code":"VA"},{"name":"Venezuela","flag":"🇻🇪","code":"VE"},{"name":"Vietnam","flag":"🇻🇳","code":"VN"},{"name":"Yemen","flag":"🇾🇪","code":"YE"},{"name":"Zambia","flag":"🇿🇲","code":"ZM"},{"name":"Zimbabwe","flag":"🇿🇼","code":"ZW"}].sort((a,b)=>a.name.localeCompare(b.name));
 
-        // Profil zaten varsa direkt chat'e git
         tg.CloudStorage.getItem('profile', (err, savedProfile) => {
             if (savedProfile) {
                 window.location.href = '/chat';
                 return;
             }
 
-            // Ana içerik
             document.getElementById('app').innerHTML = `
                 <div class="header">
-                    <h1 class="logo">Chatle</h1>
-                    <p class="subtitle">Meet strangers around the world</p>
+                    <div class="logo"><span class="logo-emoji">🔀</span> Chatle</div>
+                    <p class="subtitle">Instant anonymous chats with strangers worldwide</p>
                 </div>
 
                 <div class="profile-card">
                     <img src="${photoUrl}" alt="Profile" class="avatar">
                     <h2 class="greeting">Hello, ${displayName}</h2>
-                    <p class="username">Complete your profile to start chatting</p>
+                    <p class="info">Complete your profile to start chatting</p>
                 </div>
 
                 <div class="form-group">
                     <label>Nickname <span class="required">(required)</span></label>
-                    <input type="text" id="nickname" placeholder="Choose a nickname" autocomplete="off">
+                    <input type="text" id="nickname" placeholder="Choose your nickname" autocomplete="off">
                 </div>
 
                 <div class="form-group">
@@ -322,7 +239,7 @@
                 <div class="form-group">
                     <label>Country <span class="required">(required)</span></label>
                     <div class="country-input">
-                        <input type="text" id="country-search" placeholder="Search country..." autocomplete="off">
+                        <input type="text" id="country-search" placeholder="Search or select your country" autocomplete="off">
                         <div id="country-list"></div>
                     </div>
                     <input type="hidden" id="selected-country">
@@ -330,27 +247,22 @@
 
                 <div class="form-group">
                     <label>Bio <span style="opacity:0.6">(optional)</span></label>
-                    <textarea id="bio" placeholder="Tell us about yourself... (hobbies, interests, what you're looking for)"></textarea>
+                    <textarea id="bio" placeholder="Tell something about yourself, hobbies, what you're looking for..."></textarea>
                 </div>
             `;
 
-            // Ülke arama sistemi
             const countrySearch = document.getElementById('country-search');
             const countryList = document.getElementById('country-list');
             const selectedCountry = document.getElementById('selected-country');
 
-            countrySearch.addEventListener('focus', () => showCountries(''));
-            countrySearch.addEventListener('input', e => showCountries(e.target.value));
-
-            function showCountries(query) {
+            const showCountries = (query) => {
                 countryList.innerHTML = '';
                 const filtered = countries.filter(c => 
                     c.name.toLowerCase().includes(query.toLowerCase()) ||
-                    c.flag.includes(query) ||
                     c.code.toLowerCase().includes(query.toLowerCase())
                 );
 
-                if (filtered.length === 0 || query === '') {
+                if (filtered.length === 0) {
                     countryList.style.display = 'none';
                     return;
                 }
@@ -368,7 +280,10 @@
                 });
 
                 countryList.style.display = 'block';
-            }
+            };
+
+            countrySearch.addEventListener('focus', () => showCountries(''));
+            countrySearch.addEventListener('input', e => showCountries(e.target.value));
 
             document.addEventListener('click', e => {
                 if (!countrySearch.contains(e.target) && !countryList.contains(e.target)) {
@@ -376,14 +291,12 @@
                 }
             });
 
-            // Telegram Main Button
-            tg.MainButton.setText("Start Chatting");
+            tg.MainButton.setText("Start Chatting →");
             tg.MainButton.color = '#0088cc';
             tg.MainButton.show();
             tg.MainButton.enable();
 
             tg.MainButton.onClick(() => {
-                // Validasyon
                 const nickname = document.getElementById('nickname').value.trim();
                 const age = document.getElementById('age').value;
                 const gender = document.getElementById('gender').value;
@@ -421,12 +334,11 @@
                         window.location.href = '/chat';
                     } else {
                         tg.MainButton.hideProgress();
-                        tg.showAlert("Failed to save profile. Try again.");
+                        tg.showAlert("Save failed. Try again.");
                     }
                 });
             });
         });
     </script>
 </body>
-</html>
-          
+</html>                        
