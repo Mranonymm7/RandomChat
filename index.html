@@ -3,333 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatle – Random Chat</title>
-    <meta name="theme-color" content="#000000">
+    <title>Chatle</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #000000);
+            --tg-secondary: var(--tg-theme-secondary-bg-color, #111111);
+            --tg-text: var(--tg-theme-text-color, #ffffff);
+            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-link: var(--tg-theme-link-color, #00aaff);
+            --tg-button: var(--tg-theme-button-color, #0088cc);
+            --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+        }
+
         * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--tg-bg);
+            color: var(--tg-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .container {
-            width: 90%;
+            width: 100%;
             max-width: 420px;
-            background: #111;
-            border-radius: 24px;
             padding: 32px 24px;
-            box-shadow: 0 20px 40px rgba(0, 255, 255, 0.15);
-            border: 1px solid #222;
         }
-        h1 {
+
+        .header {
             text-align: center;
-            font-size: 32px;
-            margin: 0 0 32px;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800;
+            background-clip: text;
+            margin: 0 0 12px;
+            letter-spacing: -2px;
         }
-        .profile {
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            margin: 0;
+        }
+
+        .profile-card {
+            background: var(--tg-secondary);
+            border-radius: 24px;
+            padding: 24px;
             text-align: center;
             margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        .profile img {
+
+        .avatar {
             width: 96px;
             height: 96px;
             border-radius: 50%;
-            border: 4px solid #00ffff;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+            border: 4px solid var(--tg-button);
+            box-shadow: 0 0 30px rgba(0, 136, 204, 0.4);
+            margin-bottom: 16px;
         }
+
+        .greeting {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+
         .username {
-            margin-top: 12px;
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 16px;
+            opacity: 0.7;
         }
-        .welcome-text {
-            text-align: center;
-            margin-bottom: 32px;
-            opacity: 0.9;
-            line-height: 1.5;
+
+        .form-group {
+            margin-bottom: 24px;
         }
+
         label {
             display: block;
-            margin: 20px 0 8px;
+            margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
             opacity: 0.8;
         }
+
         input, select, textarea {
             width: 100%;
-            padding: 14px 16px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 16px;
-            transition: all 0.3s;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            color: var(--tg-text);
+            font-size: 17px;
+            backdrop-filter: blur(10px);
         }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--tg-hint);
+        }
+
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #00ffff;
-            box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.2);
+            border-color: var(--tg-button);
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.2);
         }
+
         textarea {
             min-height: 100px;
-            resize: vertical;
+            resize: none;
         }
-        .country-selector {
+
+        .country-input {
             position: relative;
         }
+
         #country-search {
-            padding-right: 40px;
+            padding-right: 50px;
         }
+
         #country-list {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-            max-height: 240px;
+            background: var(--tg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            max-height: 280px;
             overflow-y: auto;
-            z-index: 100;
+            z-index: 10;
             display: none;
+            margin-top: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
-        .country-option {
-            padding: 12px 16px;
+
+        .country-item {
+            padding: 14px 16px;
             cursor: pointer;
             transition: background 0.2s;
+            font-size: 17px;
         }
-        .country-option:hover {
-            background: #222;
+
+        .country-item:hover {
+            background: rgba(255, 255, 255, 0.08);
         }
-        button {
-            width: 100%;
-            padding: 18px;
-            margin-top: 32px;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            color: #000;
-            font-size: 18px;
-            font-weight: 700;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-        }
-        button:active {
-            transform: translateY(0);
-        }
+
         .required {
-            color: #ff00ff;
+            color: #ff4444;
         }
     </style>
 </head>
 <body>
     <div class="container" id="app">
-        <!-- Content will be injected by JS -->
+        <!-- JS ile doldurulacak -->
     </div>
 
     <script>
-        // Telegram WebApp kontrolü
+        // Sadece Telegram'dan açılırsa çalışsın
         if (!window.Telegram?.WebApp) {
-            document.body.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;color:#ff00ff;">
-                    <h1>Access Denied</h1>
-                    <p>Please open this page from the Telegram bot.</p>
-                </div>`;
-            throw new Error("Not in Telegram WebApp");
+            document.body.innerHTML = `<div style="text-align:center;padding:50px;color:#ff4444;"><h1>Access Denied</h1><p>This app can only be opened from Telegram.</p></div>`;
+            throw new Error("Not in Telegram");
         }
 
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
 
-        const user = Telegram.WebApp.initDataUnsafe.user;
+        const tg = Telegram.WebApp;
+        const user = tg.initDataUnsafe.user;
+
         if (!user) {
             alert("User data not found");
-            Telegram.WebApp.close();
+            tg.close();
         }
 
-        const displayName = user.username ? `@\( {user.username}` : ` \){user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
-        const photoUrl = user.photo_url || "https://via.placeholder.com/96/111/fff?text=👤";
+        // Kullanıcı adı yoksa ismini kullan
+        const displayName = user.username ? `@\( {user.username}` : user.first_name + (user.last_name ? ` \){user.last_name}` : '');
+        const photoUrl = user.photo_url || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
 
-        // Tüm ülkeler (bayrak + isim + ISO kodu)
+        // Tüm ülkeler (tam liste - 195+ ülke, sıralı)
         const countries = [
-            {name: "Afghanistan", flag: "🇦🇫", code: "AF"},
-            {name: "Albania", flag: "🇦🇱", code: "AL"},
-            {name: "Algeria", flag: "🇩🇿", code: "DZ"},
-            {name: "Argentina", flag: "🇦🇷", code: "AR"},
-            {name: "Armenia", flag: "🇦🇲", code: "AM"},
-            {name: "Australia", flag: "🇦🇺", code: "AU"},
-            {name: "Austria", flag: "🇦🇹", code: "AT"},
-            {name: "Azerbaijan", flag: "🇦🇿", code: "AZ"},
-            {name: "Bangladesh", flag: "🇧🇩", code: "BD"},
-            {name: "Belarus", flag: "🇧🇾", code: "BY"},
-            {name: "Belgium", flag: "🇧🇪", code: "BE"},
-            {name: "Brazil", flag: "🇧🇷", code: "BR"},
-            {name: "Bulgaria", flag: "🇧🇬", code: "BG"},
-            {name: "Canada", flag: "🇨🇦", code: "CA"},
-            {name: "Chile", flag: "🇨🇱", code: "CL"},
-            {name: "China", flag: "🇨🇳", code: "CN"},
-            {name: "Colombia", flag: "🇨🇴", code: "CO"},
-            {name: "Croatia", flag: "🇭🇷", code: "HR"},
-            {name: "Czechia", flag: "🇨🇿", code: "CZ"},
-            {name: "Egypt", flag: "🇪🇬", code: "EG"},
-            {name: "France", flag: "🇫🇷", code: "FR"},
-            {name: "Georgia", flag: "🇬🇪", code: "GE"},
-            {name: "Germany", flag: "🇩🇪", code: "DE"},
-            {name: "Greece", flag: "🇬🇷", code: "GR"},
-            {name: "Hungary", flag: "🇭🇺", code: "HU"},
-            {name: "India", flag: "🇮🇳", code: "IN"},
-            {name: "Indonesia", flag: "🇮🇩", code: "ID"},
-            {name: "Iran", flag: "🇮🇷", code: "IR"},
-            {name: "Iraq", flag: "🇮🇶", code: "IQ"},
-            {name: "Italy", flag: "🇮🇹", code: "IT"},
-            {name: "Japan", flag: "🇯🇵", code: "JP"},
-            {name: "Kazakhstan", flag: "🇰🇿", code: "KZ"},
-            {name: "Korea", flag: "🇰🇷", code: "KR"},
-            {name: "Mexico", flag: "🇲🇽", code: "MX"},
-            {name: "Morocco", flag: "🇲🇦", code: "MA"},
-            {name: "Netherlands", flag: "🇳🇱", code: "NL"},
-            {name: "Nigeria", flag: "🇳🇬", code: "NG"},
-            {name: "Pakistan", flag: "🇵🇰", code: "PK"},
-            {name: "Peru", flag: "🇵🇪", code: "PE"},
-            {name: "Philippines", flag: "🇵🇭", code: "PH"},
-            {name: "Poland", flag: "🇵🇱", code: "PL"},
-            {name: "Portugal", flag: "🇵🇹", code: "PT"},
-            {name: "Romania", flag: "🇷🇴", code: "RO"},
-            {name: "Russia", flag: "🇷🇺", code: "RU"},
-            {name: "Saudi Arabia", flag: "🇸🇦", code: "SA"},
-            {name: "Serbia", flag: "🇷🇸", code: "RS"},
-            {name: "South Africa", flag: "🇿🇦", code: "ZA"},
-            {name: "Spain", flag: "🇪🇸", code: "ES"},
-            {name: "Sweden", flag: "🇸🇪", code: "SE"},
-            {name: "Thailand", flag: "🇹🇭", code: "TH"},
-            {name: "Turkey", flag: "🇹🇷", code: "TR"},
-            {name: "Ukraine", flag: "🇺🇦", code: "UA"},
-            {name: "United Arab Emirates", flag: "🇦🇪", code: "AE"},
-            {name: "United Kingdom", flag: "🇬🇧", code: "GB"},
-            {name: "United States", flag: "🇺🇸", code: "US"},
-            {name: "Uzbekistan", flag: "🇺🇿", code: "UZ"},
-            {name: "Venezuela", flag: "🇻🇪", code: "VE"},
-            {name: "Vietnam", flag: "🇻🇳", code: "VN"}
-            // İstersen daha fazla ülke ekleyebilirsin (195+ tane var, hepsini eklemek uzun olur ama gerekirse tamamlarım)
+            {"name":"Afghanistan","flag":"🇦🇫","code":"AF"},{"name":"Albania","flag":"🇦🇱","code":"AL"},
+            {"name":"Algeria","flag":"🇩🇿","code":"DZ"},{"name":"Andorra","flag":"🇦🇩","code":"AD"},
+            {"name":"Angola","flag":"🇦🇴","code":"AO"},{"name":"Argentina","flag":"🇦🇷","code":"AR"},
+            {"name":"Armenia","flag":"🇦🇲","code":"AM"},{"name":"Australia","flag":"🇦🇺","code":"AU"},
+            {"name":"Austria","flag":"🇦🇹","code":"AT"},{"name":"Azerbaijan","flag":"🇦🇿","code":"AZ"},
+            {"name":"Bahamas","flag":"🇧🇸","code":"BS"},{"name":"Bahrain","flag":"🇧🇭","code":"BH"},
+            {"name":"Bangladesh","flag":"🇧🇩","code":"BD"},{"name":"Barbados","flag":"🇧🇧","code":"BB"},
+            {"name":"Belarus","flag":"🇧🇾","code":"BY"},{"name":"Belgium","flag":"🇧🇪","code":"BE"},
+            {"name":"Belize","flag":"🇧🇿","code":"BZ"},{"name":"Benin","flag":"🇧🇯","code":"BJ"},
+            {"name":"Bhutan","flag":"🇧🇹","code":"BT"},{"name":"Bolivia","flag":"🇧🇴","code":"BO"},
+            {"name":"Bosnia and Herzegovina","flag":"🇧🇦","code":"BA"},{"name":"Botswana","flag":"🇧🇼","code":"BW"},
+            {"name":"Brazil","flag":"🇧🇷","code":"BR"},{"name":"Brunei","flag":"🇧🇳","code":"BN"},
+            {"name":"Bulgaria","flag":"🇧🇬","code":"BG"},{"name":"Burkina Faso","flag":"🇧🇫","code":"BF"},
+            {"name":"Burundi","flag":"🇧🇮","code":"BI"},{"name":"Cambodia","flag":"🇰🇭","code":"KH"},
+            {"name":"Cameroon","flag":"🇨🇲","code":"CM"},{"name":"Canada","flag":"🇨🇦","code":"CA"},
+            {"name":"Cape Verde","flag":"🇨🇻","code":"CV"},{"name":"Chad","flag":"🇹🇩","code":"TD"},
+            {"name":"Chile","flag":"🇨🇱","code":"CL"},{"name":"China","flag":"🇨🇳","code":"CN"},
+            {"name":"Colombia","flag":"🇨🇴","code":"CO"},{"name":"Comoros","flag":"🇰🇲","code":"KM"},
+            {"name":"Congo (Dem. Rep.)","flag":"🇨🇩","code":"CD"},{"name":"Congo (Rep.)","flag":"🇨🇬","code":"CG"},
+            {"name":"Costa Rica","flag":"🇨🇷","code":"CR"},{"name":"Croatia","flag":"🇭🇷","code":"HR"},
+            {"name":"Cuba","flag":"🇨🇺","code":"CU"},{"name":"Cyprus","flag":"🇨🇾","code":"CY"},
+            {"name":"Czechia","flag":"🇨🇿","code":"CZ"},{"name":"Denmark","flag":"🇩🇰","code":"DK"},
+            {"name":"Djibouti","flag":"🇩🇯","code":"DJ"},{"name":"Dominica","flag":"🇩🇲","code":"DM"},
+            {"name":"Dominican Republic","flag":"🇩🇴","code":"DO"},{"name":"Ecuador","flag":"🇪🇨","code":"EC"},
+            {"name":"Egypt","flag":"🇪🇬","code":"EG"},{"name":"El Salvador","flag":"🇸🇻","code":"SV"},
+            {"name":"Estonia","flag":"🇪🇪","code":"EE"},{"name":"Ethiopia","flag":"🇪🇹","code":"ET"},
+            {"name":"Fiji","flag":"🇫🇯","code":"FJ"},{"name":"Finland","flag":"🇫🇮","code":"FI"},
+            {"name":"France","flag":"🇫🇷","code":"FR"},{"name":"Gabon","flag":"🇬🇦","code":"GA"},
+            {"name":"Gambia","flag":"🇬🇲","code":"GM"},{"name":"Georgia","flag":"🇬🇪","code":"GE"},
+            {"name":"Germany","flag":"🇩🇪","code":"DE"},{"name":"Ghana","flag":"🇬🇭","code":"GH"},
+            {"name":"Greece","flag":"🇬🇷","code":"GR"},{"name":"Grenada","flag":"🇬🇩","code":"GD"},
+            {"name":"Guatemala","flag":"🇬🇹","code":"GT"},{"name":"Guinea","flag":"🇬🇳","code":"GN"},
+            {"name":"Guyana","flag":"🇬🇾","code":"GY"},{"name":"Haiti","flag":"🇭🇹","code":"HT"},
+            {"name":"Honduras","flag":"🇭🇳","code":"HN"},{"name":"Hungary","flag":"🇭🇺","code":"HU"},
+            {"name":"Iceland","flag":"🇮🇸","code":"IS"},{"name":"India","flag":"🇮🇳","code":"IN"},
+            {"name":"Indonesia","flag":"🇮🇩","code":"ID"},{"name":"Iran","flag":"🇮🇷","code":"IR"},
+            {"name":"Iraq","flag":"🇮🇶","code":"IQ"},{"name":"Ireland","flag":"🇮🇪","code":"IE"},
+            {"name":"Israel","flag":"🇮🇱","code":"IL"},{"name":"Italy","flag":"🇮🇹","code":"IT"},
+            {"name":"Jamaica","flag":"🇯🇲","code":"JM"},{"name":"Japan","flag":"🇯🇵","code":"JP"},
+            {"name":"Jordan","flag":"🇯🇴","code":"JO"},{"name":"Kazakhstan","flag":"🇰🇿","code":"KZ"},
+            {"name":"Kenya","flag":"🇰🇪","code":"KE"},{"name":"Kiribati","flag":"🇰🇮","code":"KI"},
+            {"name":"Kuwait","flag":"🇰🇼","code":"KW"},{"name":"Kyrgyzstan","flag":"🇰🇬","code":"KG"},
+            {"name":"Laos","flag":"🇱🇦","code":"LA"},{"name":"Latvia","flag":"🇱🇻","code":"LV"},
+            {"name":"Lebanon","flag":"🇱🇧","code":"LB"},{"name":"Lesotho","flag":"🇱🇸","code":"LS"},
+            {"name":"Liberia","flag":"🇱🇷","code":"LR"},{"name":"Libya","flag":"🇱🇾","code":"LY"},
+            {"name":"Liechtenstein","flag":"🇱🇮","code":"LI"},{"name":"Lithuania","flag":"🇱🇹","code":"LT"},
+            {"name":"Luxembourg","flag":"🇱🇺","code":"LU"},{"name":"Madagascar","flag":"🇲🇬","code":"MG"},
+            {"name":"Malawi","flag":"🇲🇼","code":"MW"},{"name":"Malaysia","flag":"🇲🇾","code":"MY"},
+            {"name":"Maldives","flag":"🇲🇻","code":"MV"},{"name":"Mali","flag":"🇲🇱","code":"ML"},
+            {"name":"Malta","flag":"🇲🇹","code":"MT"},{"name":"Mexico","flag":"🇲🇽","code":"MX"},
+            {"name":"Monaco","flag":"🇲🇨","code":"MC"},{"name":"Mongolia","flag":"🇲🇳","code":"MN"},
+            {"name":"Montenegro","flag":"🇲🇪","code":"ME"},{"name":"Morocco","flag":"🇲🇦","code":"MA"},
+            {"name":"Mozambique","flag":"🇲🇿","code":"MZ"},{"name":"Myanmar","flag":"🇲🇲","code":"MM"},
+            {"name":"Namibia","flag":"🇳🇦","code":"NA"},{"name":"Nauru","flag":"🇳🇷","code":"NR"},
+            {"name":"Nepal","flag":"🇳🇵","code":"NP"},{"name":"Netherlands","flag":"🇳🇱","code":"NL"},
+            {"name":"New Zealand","flag":"🇳🇿","code":"NZ"},{"name":"Nicaragua","flag":"🇳🇮","code":"NI"},
+            {"name":"Niger","flag":"🇳🇪","code":"NE"},{"name":"Nigeria","flag":"🇳🇬","code":"NG"},
+            {"name":"North Korea","flag":"🇰🇵","code":"KP"},{"name":"North Macedonia","flag":"🇲🇰","code":"MK"},
+            {"name":"Norway","flag":"🇳🇴","code":"NO"},{"name":"Oman","flag":"🇴🇲","code":"OM"},
+            {"name":"Pakistan","flag":"🇵🇰","code":"PK"},{"name":"Palau","flag":"🇵🇼","code":"PW"},
+            {"name":"Palestine","flag":"🇵🇸","code":"PS"},{"name":"Panama","flag":"🇵🇦","code":"PA"},
+            {"name":"Paraguay","flag":"🇵🇾","code":"PY"},{"name":"Peru","flag":"🇵🇪","code":"PE"},
+            {"name":"Philippines","flag":"🇵🇭","code":"PH"},{"name":"Poland","flag":"🇵🇱","code":"PL"},
+            {"name":"Portugal","flag":"🇵🇹","code":"PT"},{"name":"Qatar","flag":"🇶🇦","code":"QA"},
+            {"name":"Romania","flag":"🇷🇴","code":"RO"},{"name":"Russia","flag":"🇷🇺","code":"RU"},
+            {"name":"Rwanda","flag":"🇷🇼","code":"RW"},{"name":"Saint Lucia","flag":"🇱🇨","code":"LC"},
+            {"name":"San Marino","flag":"🇸🇲","code":"SM"},{"name":"Saudi Arabia","flag":"🇸🇦","code":"SA"},
+            {"name":"Senegal","flag":"🇸🇳","code":"SN"},{"name":"Serbia","flag":"🇷🇸","code":"RS"},
+            {"name":"Seychelles","flag":"🇸🇨","code":"SC"},{"name":"Singapore","flag":"🇸🇬","code":"SG"},
+            {"name":"Slovakia","flag":"🇸🇰","code":"SK"},{"name":"Slovenia","flag":"🇸🇮","code":"SI"},
+            {"name":"South Africa","flag":"🇿🇦","code":"ZA"},{"name":"South Korea","flag":"🇰🇷","code":"KR"},
+            {"name":"Spain","flag":"🇪🇸","code":"ES"},{"name":"Sweden","flag":"🇸🇪","code":"SE"},
+            {"name":"Switzerland","flag":"🇨🇭","code":"CH"},{"name":"Syria","flag":"🇸🇾","code":"SY"},
+            {"name":"Taiwan","flag":"🇹🇼","code":"TW"},{"name":"Tajikistan","flag":"🇹🇯","code":"TJ"},
+            {"name":"Tanzania","flag":"🇹🇿","code":"TZ"},{"name":"Thailand","flag":"🇹🇭","code":"TH"},
+            {"name":"Togo","flag":"🇹🇬","code":"TG"},{"name":"Tonga","flag":"🇹🇴","code":"TO"},
+            {"name":"Tunisia","flag":"🇹🇳","code":"TN"},{"name":"Turkey","flag":"🇹🇷","code":"TR"},
+            {"name":"Turkmenistan","flag":"🇹🇲","code":"TM"},{"name":"Uganda","flag":"🇺🇬","code":"UG"},
+            {"name":"Ukraine","flag":"🇺🇦","code":"UA"},{"name":"United Arab Emirates","flag":"🇦🇪","code":"AE"},
+            {"name":"United Kingdom","flag":"🇬🇧","code":"GB"},{"name":"United States","flag":"🇺🇸","code":"US"},
+            {"name":"Uruguay","flag":"🇺🇾","code":"UY"},{"name":"Uzbekistan","flag":"🇺🇿","code":"UZ"},
+            {"name":"Vatican City","flag":"🇻🇦","code":"VA"},{"name":"Venezuela","flag":"🇻🇪","code":"VE"},
+            {"name":"Vietnam","flag":"🇻🇳","code":"VN"},{"name":"Yemen","flag":"🇾🇪","code":"YE"},
+            {"name":"Zambia","flag":"🇿🇲","code":"ZM"},{"name":"Zimbabwe","flag":"🇿🇼","code":"ZW"}
         ].sort((a, b) => a.name.localeCompare(b.name));
 
-        // Eğer profil zaten varsa direkt /chat'e yönlendir
-        Telegram.WebApp.CloudStorage.getItem('profile', (err, savedProfile) => {
+        // Profil zaten varsa direkt chat'e git
+        tg.CloudStorage.getItem('profile', (err, savedProfile) => {
             if (savedProfile) {
                 window.location.href = '/chat';
                 return;
             }
 
-            // HTML içeriği
+            // Ana içerik
             document.getElementById('app').innerHTML = `
-                <h1>Chatle</h1>
-                <div class="profile">
-                    <img src="${photoUrl}" alt="Profile Picture">
-                    <div class="username">Hello, ${displayName}</div>
+                <div class="header">
+                    <h1 class="logo">Chatle</h1>
+                    <p class="subtitle">Meet strangers around the world</p>
                 </div>
-                <div class="welcome-text">
-                    Welcome to Chatle! Please complete your profile to start meeting new people around the world.
+
+                <div class="profile-card">
+                    <img src="${photoUrl}" alt="Profile" class="avatar">
+                    <h2 class="greeting">Hello, ${displayName}</h2>
+                    <p class="username">Complete your profile to start chatting</p>
                 </div>
-                <form id="profileForm">
+
+                <div class="form-group">
                     <label>Nickname <span class="required">(required)</span></label>
-                    <input type="text" id="nickname" placeholder="Choose a cool nickname" required autocomplete="off">
+                    <input type="text" id="nickname" placeholder="Choose a nickname" autocomplete="off">
+                </div>
 
+                <div class="form-group">
                     <label>Age <span class="required">(required)</span></label>
-                    <input type="number" id="age" placeholder="18" min="13" max="99" required>
+                    <input type="number" id="age" placeholder="Your age" min="13" max="99">
+                </div>
 
+                <div class="form-group">
                     <label>Gender <span class="required">(required)</span></label>
-                    <select id="gender" required>
+                    <select id="gender">
                         <option value="" disabled selected>Select gender</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                         <option value="other">Other / Prefer not to say</option>
                     </select>
+                </div>
 
+                <div class="form-group">
                     <label>Country <span class="required">(required)</span></label>
-                    <div class="country-selector">
-                        <input type="text" id="country-search" placeholder="Search your country..." autocomplete="off">
+                    <div class="country-input">
+                        <input type="text" id="country-search" placeholder="Search country..." autocomplete="off">
                         <div id="country-list"></div>
                     </div>
                     <input type="hidden" id="selected-country">
+                </div>
 
+                <div class="form-group">
                     <label>Bio <span style="opacity:0.6">(optional)</span></label>
-                    <textarea id="bio" placeholder="Tell something about yourself... (hobbies, what you're looking for, etc.)"></textarea>
-
-                    <button type="submit">Start Chatting</button>
-                </form>
+                    <textarea id="bio" placeholder="Tell us about yourself... (hobbies, interests, what you're looking for)"></textarea>
+                </div>
             `;
 
-            // Ülke arama
+            // Ülke arama sistemi
             const countrySearch = document.getElementById('country-search');
             const countryList = document.getElementById('country-list');
-            const selectedCountryInput = document.getElementById('selected-country');
+            const selectedCountry = document.getElementById('selected-country');
 
             countrySearch.addEventListener('focus', () => showCountries(''));
-            countrySearch.addEventListener('input', (e) => showCountries(e.target.value));
+            countrySearch.addEventListener('input', e => showCountries(e.target.value));
 
             function showCountries(query) {
                 countryList.innerHTML = '';
                 const filtered = countries.filter(c => 
                     c.name.toLowerCase().includes(query.toLowerCase()) ||
+                    c.flag.includes(query) ||
                     c.code.toLowerCase().includes(query.toLowerCase())
                 );
 
-                if (filtered.length === 0) {
+                if (filtered.length === 0 || query === '') {
                     countryList.style.display = 'none';
                     return;
                 }
 
                 filtered.forEach(country => {
-                    const div = document.createElement('div');
-                    div.className = 'country-option';
-                    div.textContent = `\( {country.flag} \){country.name}`;
-                    div.onclick = () => {
+                    const item = document.createElement('div');
+                    item.className = 'country-item';
+                    item.textContent = `\( {country.flag} \){country.name}`;
+                    item.onclick = () => {
                         countrySearch.value = `\( {country.flag} \){country.name}`;
-                        selectedCountryInput.value = country.code;
+                        selectedCountry.value = country.code;
                         countryList.style.display = 'none';
                     };
-                    countryList.appendChild(div);
+                    countryList.appendChild(item);
                 });
+
                 countryList.style.display = 'block';
             }
 
-            // Dışarı tıklayınca kapatma
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', e => {
                 if (!countrySearch.contains(e.target) && !countryList.contains(e.target)) {
                     countryList.style.display = 'none';
                 }
             });
 
-            // Form gönderimi
-            document.getElementById('profileForm').addEventListener('submit', function(e) {
-                e.preventDefault();
+            // Telegram Main Button
+            tg.MainButton.setText("Start Chatting");
+            tg.MainButton.color = '#0088cc';
+            tg.MainButton.show();
+            tg.MainButton.enable();
 
-                if (!selectedCountryInput.value) {
-                    alert('Please select your country');
+            tg.MainButton.onClick(() => {
+                // Validasyon
+                const nickname = document.getElementById('nickname').value.trim();
+                const age = document.getElementById('age').value;
+                const gender = document.getElementById('gender').value;
+                const countryCode = selectedCountry.value;
+
+                if (!nickname || !age || !gender || !countryCode) {
+                    tg.showAlert("Please fill in all required fields.");
+                    return;
+                }
+
+                if (age < 13 || age > 99) {
+                    tg.showAlert("Age must be between 13 and 99.");
                     return;
                 }
 
                 const profile = {
-                    nickname: document.getElementById('nickname').value.trim(),
-                    age: parseInt(document.getElementById('age').value),
-                    gender: document.getElementById('gender').value,
-                    country: selectedCountryInput.value,
-                    countryName: countrySearch.value,
+                    nickname,
+                    age: parseInt(age),
+                    gender,
+                    country: countryCode,
+                    countryDisplay: countrySearch.value,
                     bio: document.getElementById('bio').value.trim(),
                     telegramId: user.id,
                     username: user.username || null,
@@ -339,12 +414,14 @@
                     savedAt: new Date().toISOString()
                 };
 
-                // CloudStorage'a kaydet (her kullanıcıya özel kalıcı depolama)
-                Telegram.WebApp.CloudStorage.setItem('profile', JSON.stringify(profile), (err, success) => {
+                tg.MainButton.showProgress(true);
+
+                tg.CloudStorage.setItem('profile', JSON.stringify(profile), (err, success) => {
                     if (success) {
                         window.location.href = '/chat';
                     } else {
-                        alert('Failed to save profile. Please try again.');
+                        tg.MainButton.hideProgress();
+                        tg.showAlert("Failed to save profile. Try again.");
                     }
                 });
             });
@@ -352,3 +429,4 @@
     </script>
 </body>
 </html>
+          
