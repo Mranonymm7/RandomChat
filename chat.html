@@ -1,7 +1,8 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!-- chat.html -->
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Chatle — Random Chat</title>
 
@@ -10,31 +11,31 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <style>
-  :root {
-    --bg:#0b1020; --sec:#0f1724; --text:#e6eef8; --muted:#aab6c8; --accent:#1ea7ff;
+  :root{
+    --bg:#071226; --panel:#0c1724; --muted:#9fb3c6; --text:#eaf6ff; --accent:#1ea7ff;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter, system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column}
-  header{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.04)}
-  .logo{font-weight:800;font-size:22px;background:linear-gradient(90deg,#7de0ff,#5a8bff);-webkit-background-clip:text;color:transparent}
-  .user{display:flex;gap:10px;align-items:center}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .brand{font-weight:800;font-size:20px;background:linear-gradient(90deg,#7de0ff,#5a8bff);-webkit-background-clip:text;color:transparent}
+  .user{display:flex;align-items:center;gap:12px}
   .avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
-  main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
-  .panel{width:100%;max-width:760px;background:var(--sec);border-radius:14px;padding:34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
-  h1{font-size:20px;margin-bottom:8px}
-  p.sub{color:var(--muted);margin-bottom:22px}
-  button#start{background:linear-gradient(90deg,var(--accent),#0084ff);color:white;border:none;padding:18px 56px;border-radius:30px;font-weight:800;font-size:18px;cursor:pointer}
-  button#start[disabled]{opacity:0.5;cursor:not-allowed}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:30px}
+  .card{width:100%;max-width:820px;background:var(--panel);border-radius:14px;padding:34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+  h1{font-size:22px;margin-bottom:8px}
+  p.desc{color:var(--muted);margin-bottom:20px}
+  button#start{background:linear-gradient(90deg,var(--accent),#0084ff);color:white;border:none;padding:16px 64px;border-radius:28px;font-weight:800;font-size:16px;cursor:pointer}
   #searching{display:none;margin-top:18px}
   .small{color:var(--muted);font-size:14px}
-  footer{display:flex;background:var(--sec);border-top:1px solid rgba(255,255,255,0.04)}
+  button#cancel{background:none;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:10px 18px;border-radius:12px;cursor:pointer}
+  footer{display:flex;background:var(--panel);border-top:1px solid rgba(255,255,255,0.04)}
   .tab{flex:1;padding:14px;text-align:center;color:var(--muted)}
   .tab.active{color:var(--accent);font-weight:700}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">Chatle</div>
+  <div class="brand">Chatle</div>
   <div class="user">
     <img id="my-photo" class="avatar" src="">
     <div id="my-nick" style="font-weight:700"></div>
@@ -42,16 +43,16 @@
 </header>
 
 <main>
-  <div class="panel">
-    <h1>Rastgele Sohbete Başla</h1>
-    <p class="sub">Gerçek kullanıcılarla anında eşleş. Gizlilik — uçtan uca değil ama bu demo için mesajlar yalnızca odada tutulur.</p>
+  <div class="card">
+    <h1>Start a Random Chat</h1>
+    <p class="desc">Connect instantly with another user. Press the button below to join the queue.</p>
 
-    <button id="start" disabled>Yükleniyor...</button>
+    <button id="start" disabled>Loading...</button>
 
-    <div id="searching" style="margin-top:18px">
-      <div class="small" id="searching-text">Kullanıcı aranıyor…</div>
-      <div style="margin-top:14px">
-        <button id="cancel" style="background:none;border:1px solid rgba(255,255,255,0.08);color:var(--muted);padding:10px 20px;border-radius:12px;cursor:pointer">İptal</button>
+    <div id="searching">
+      <div id="searching-text" class="small">Searching for a partner...</div>
+      <div style="margin-top:12px">
+        <button id="cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -70,7 +71,7 @@ Telegram.WebApp.expand();
 
 const tg = Telegram.WebApp;
 
-// -- FIREBASE CONFIG (sizin mevcut config) --
+// FIREBASE config (your project)
 const firebaseConfig = {
   apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
   authDomain: "toolstr-f5308.firebaseapp.com",
@@ -92,8 +93,8 @@ const myNick = document.getElementById('my-nick');
 
 const initUser = tg.initDataUnsafe?.user;
 if (!initUser) {
-  console.error("Telegram user verisi yok");
-  tg.showPopup({message: "Kullanıcı alınamadı. Yeniden açmayı dene."});
+  console.error("Telegram user missing");
+  tg.showPopup({message:"Cannot read Telegram user data"});
 }
 
 const myId = initUser?.id?.toString();
@@ -105,38 +106,39 @@ const queueRef = db.collection('queue');
 const roomsRef = db.collection('rooms');
 const myQueueDoc = queueRef.doc(myId);
 
-// yükleniyor: profile CloudStorage'tan al
+// Read profile from Telegram CloudStorage
 tg.CloudStorage.getItem('profile', (err, saved) => {
-  if (err) { console.warn(err); tg.showPopup({message:"Profil alınırken hata"}); return; }
+  if (err) {
+    console.error("CloudStorage error:", err);
+    tg.showPopup({message:"Profile load failed"});
+    startBtn.textContent = "Profile error";
+    return;
+  }
   if (!saved) {
-    tg.showPopup({message:"Profil bulunamadı. Lütfen profilini kaydet."});
-    startBtn.textContent = "Profil yok";
+    tg.showPopup({message:"Profile not found in CloudStorage. Please save your profile first."});
+    startBtn.textContent = "No profile";
     startBtn.disabled = true;
     return;
   }
-
   try {
     myProfile = JSON.parse(saved);
-  } catch(e){ myProfile = null; }
-
-  if (!myProfile) {
-    tg.showPopup({message:"Profil verisi bozuk."});
-    startBtn.textContent = "Profil yok";
-    startBtn.disabled = true;
+  } catch(e) {
+    console.error("Profile parse error", e);
+    tg.showPopup({message:"Profile corrupted"});
+    startBtn.textContent = "Profile error";
     return;
   }
 
-  // UI güncelle
-  myNick.textContent = myProfile.nickname || (initUser?.first_name || "Kullanıcı");
+  myNick.textContent = myProfile.nickname || (initUser?.first_name || "User");
   myPhoto.src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
   startBtn.textContent = "Start Random Chat";
   startBtn.disabled = false;
 });
 
-// yardımcı: güvenli profil objesi (eksik alan varsa boş bırak)
-function makeProfileObj(p){
+function safeProfile(p){
+  if (!p) return {};
   return {
-    nickname: p.nickname || (initUser?.first_name || "User"),
+    nickname: p.nickname || "",
     photoUrl: p.photoUrl || "",
     age: p.age || null,
     gender: p.gender || "",
@@ -146,81 +148,74 @@ function makeProfileObj(p){
   };
 }
 
-// eşleşme başlat
 async function enterQueue(){
-  if (!myProfile) { tg.showPopup({message:"Profil henüz hazır değil"}); return; }
+  if (!myProfile) { tg.showPopup({message:"Profile not ready"}); return; }
   inQueue = true;
   startBtn.style.display = 'none';
   searchingDiv.style.display = 'block';
-  searchingText.textContent = "Kullanıcı aranıyor…";
+  searchingText.textContent = "Searching for a partner...";
 
   const payload = {
-    profile: makeProfileObj(myProfile),
+    profile: safeProfile(myProfile),
     ts: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   try {
     await myQueueDoc.set(payload);
   } catch(e){
-    console.error("Queue set hatası:", e);
-    tg.showPopup({message:"Sıraya eklenirken hata"});
+    console.error("Failed to write queue doc", e);
+    tg.showPopup({message:"Failed to join queue"});
     inQueue = false;
     startBtn.style.display = 'inline-block';
     searchingDiv.style.display = 'none';
     return;
   }
 
-  // Snapshot ile sırayı dinle
   queueUnsub = queueRef.orderBy('ts','asc').onSnapshot(async snap => {
     if (!inQueue) return;
-    // console.log("QUEUE SNAP", snap.docs.map(d=>d.id));
+    console.log("Queue snapshot:", snap.docs.map(d=>d.id));
     for (let doc of snap.docs){
       if (doc.id === myId) continue;
-      // bulundu! partner var
       const partnerId = doc.id;
       const partnerProfile = doc.data().profile || {};
       const roomId = [myId, partnerId].sort((a,b)=>a.localeCompare(b)).join('_');
-
       const roomDoc = roomsRef.doc(roomId);
 
-      // Güvenli biçimde oda oluştur
       try {
         await roomDoc.set({
           users: [myId, partnerId],
           profiles: {
-            [myId]: makeProfileObj(myProfile),
-            [partnerId]: makeProfileObj(partnerProfile)
+            [myId]: safeProfile(myProfile),
+            [partnerId]: safeProfile(partnerProfile)
           },
-          messages: [],
+          messages: [],            // ensures array exists
           friendRequests: {},
           active: true,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       } catch(e){
-        console.error("Room set hatası:", e);
+        console.error("Failed to create room", e);
       }
 
-      // temizle
-      try { await myQueueDoc.delete(); } catch(e){ console.warn("myQueueDoc.delete()", e); }
-      try { await queueRef.doc(partnerId).delete(); } catch(e){ /* ignore */ }
+      // remove both queue docs
+      try { await myQueueDoc.delete(); } catch(e){ console.warn("delete myQueueDoc", e); }
+      try { await queueRef.doc(partnerId).delete(); } catch(e){ console.warn("delete partnerQueueDoc", e); }
 
-      // stop listening ve yönlendir
       if (queueUnsub) queueUnsub();
       inQueue = false;
 
-      // güvenli url encode
+      // navigate to chat page (fixed .html)
       const url = `/special.html?room=${encodeURIComponent(roomId)}&partner=${encodeURIComponent(partnerId)}`;
       window.location.href = url;
       return;
     }
   }, err => {
-    console.error("Queue snapshot error:", err);
+    console.error("Queue snapshot error", err);
+    tg.showPopup({message:"Queue listener error"});
   });
 }
 
-startBtn.addEventListener('click', () => {
-  enterQueue();
-});
+startBtn.addEventListener('click', () => enterQueue());
 
 cancelBtn.addEventListener('click', async () => {
   inQueue = false;
@@ -231,4 +226,4 @@ cancelBtn.addEventListener('click', async () => {
 });
 </script>
 </body>
-    </html>
+</html>
