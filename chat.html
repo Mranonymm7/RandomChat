@@ -12,9 +12,8 @@
             --tg-bg: var(--tg-theme-bg-color, #000000);
             --tg-secondary: var(--tg-theme-secondary-bg-color, #111111);
             --tg-text: var(--tg-theme-text-color, #ffffff);
-            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-hint: var(--tg-theme-hint-color, #888888);
             --tg-button: var(--tg-theme-button-color, #0088cc);
-            --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
         }
 
         * { box-sizing: border-box; }
@@ -27,6 +26,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overscroll-behavior: none;
         }
 
         header {
@@ -35,6 +35,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
         }
 
         .logo {
@@ -64,44 +65,59 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            overflow: hidden;
         }
 
-        #find-screen, #searching-screen {
-            text-align: center;
+        #find-screen, #searching-screen, #chat-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #find-screen {
+            align-items: center;
+            justify-content: center;
         }
 
         #big-btn {
             background: linear-gradient(135deg, var(--tg-button), #00aaff);
             color: #fff;
             border: none;
-            border-radius: 24px;
-            padding: 20px 60px;
+            border-radius: 26px;
+            padding: 22px 70px;
             font-size: 20px;
             font-weight: 700;
-            box-shadow: 0 10px 30px rgba(0, 136, 204, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 136, 204, 0.35);
             cursor: pointer;
-            transition: all 0.3s;
         }
 
-        #big-btn:hover { transform: translateY(-3px); }
+        #searching-screen {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #searching-screen h2 {
+            margin: 0 0 12px 0;
+            font-size: 24px;
+        }
+
+        #searching-screen p {
+            opacity: 0.7;
+            margin: 0 0 40px 0;
+        }
 
         #cancel-btn {
-            margin-top: 30px;
             background: none;
             border: 1px solid #555;
             color: var(--tg-hint);
-            padding: 12px 30px;
-            border-radius: 16px;
+            padding: 14px 36px;
+            border-radius: 20px;
+            font-size: 16px;
         }
 
         #chat-screen {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            width: 100%;
+            display: none;
         }
 
         #chat-header {
@@ -109,29 +125,30 @@
             background: var(--tg-secondary);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
         }
 
         #chat-header img {
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
         }
 
         #partner-name {
             flex: 1;
             font-weight: 600;
-            font-size: 18px;
+            font-size: 19px;
         }
 
         #add-friend-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.12);
             border: none;
-            font-size: 24px;
+            font-size: 26px;
             color: #fff;
             cursor: pointer;
         }
@@ -142,114 +159,112 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
         .message {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 20px;
+            max-width: 82%;
+            padding: 13px 18px;
+            border-radius: 22px;
             position: relative;
             word-wrap: break-word;
+            line-height: 1.4;
         }
 
         .message.mine {
             align-self: flex-end;
             background: var(--tg-button);
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 6px;
         }
 
         .message.other {
             align-self: flex-start;
             background: #222;
-            border-bottom-left-radius: 4px;
+            border-bottom-left-radius: 6px;
         }
 
         .message-time {
             font-size: 11px;
             opacity: 0.7;
-            margin-top: 4px;
+            margin-top: 6px;
             text-align: right;
         }
 
         .date-separator {
             text-align: center;
-            margin: 20px 0;
+            margin: 24px 0;
             opacity: 0.6;
             font-size: 13px;
         }
 
         #privacy-info {
             text-align: center;
-            padding: 20px;
+            padding: 30px 20px;
             opacity: 0.7;
             font-size: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
+            flex-shrink: 0;
         }
 
         #input-area {
             padding: 16px 20px;
             background: var(--tg-secondary);
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
+            flex-shrink: 0;
         }
 
         #message-input {
             flex: 1;
-            padding: 14px 18px;
+            padding: 16px 20px;
             background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 26px;
             color: var(--tg-text);
             font-size: 17px;
         }
 
         #send-btn {
-            width: 48px;
-            height: 48px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             background: var(--tg-button);
             border: none;
             color: #fff;
-            font-size: 20px;
+            font-size: 22px;
         }
 
         #exit-btn {
             background: #ff4444;
             color: #fff;
             border: none;
-            padding: 12px 24px;
-            border-radius: 16px;
+            padding: 14px 28px;
+            border-radius: 20px;
             font-weight: 600;
+            font-size: 16px;
         }
 
         footer {
             display: flex;
             background: var(--tg-secondary);
             border-top: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
         }
 
         .tab {
             flex: 1;
-            padding: 16px 0;
+            padding: 18px 0;
             text-align: center;
             font-size: 14px;
             font-weight: 500;
             color: var(--tg-hint);
             text-decoration: none;
-            transition: all 0.2s;
         }
 
         .tab.active {
             color: var(--tg-button);
             font-weight: 700;
-        }
-
-        .tab span {
-            display: block;
-            font-size: 24px;
-            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -268,12 +283,12 @@
         </div>
 
         <div id="searching-screen" hidden>
-            <h2>Searching for someone...</h2>
-            <p>This may take a few seconds</p>
+            <h2>Finding someone to chat with...</h2>
+            <p>This usually takes just a few seconds</p>
             <button id="cancel-btn">Cancel</button>
         </div>
 
-        <div id="chat-screen" hidden>
+        <div id="chat-screen">
             <div id="chat-header">
                 <img id="partner-photo" src="">
                 <div id="partner-name"></div>
@@ -282,25 +297,24 @@
             <div id="messages"></div>
             <div id="privacy-info">
                 Chats are completely private and end-to-end secure.<br>
-                Messages cannot be accessed from other accounts or devices.
+                No one else (not even admins) can read your messages.
             </div>
             <div id="input-area">
                 <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button id="send-btn">➤</button>
+                <button id="send-btn">→</button>
                 <button id="exit-btn">End Chat</button>
             </div>
         </div>
     </main>
 
     <footer>
-        <a href="/chat" class="tab active"><span>🔀</span>Home</a>
-        <a href="/chats.html" class="tab"><span>💬</span>Chats</a>
-        <a href="/profile.html" class="tab"><span>👤</span>Profile</a>
-        <a href="/suggestions.html" class="tab"><span>🔍</span>Discover</a>
+        <a href="/chat" class="tab active">Home</a>
+        <a href="/chats.html" class="tab">Chats</a>
+        <a href="/profile.html" class="tab">Profile</a>
+        <a href="/suggestions.html" class="tab">Discover</a>
     </footer>
 
     <script>
-        // === TELEGRAM & PROFILE ===
         if (!window.Telegram?.WebApp) location.href = "about:blank";
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
@@ -316,6 +330,21 @@
         let queueUnsubscribe = null;
         let roomUnsubscribe = null;
 
+        // === FIREBASE CONFIG - KENDİ PROJENLE DEĞİŞTİR ===
+        const firebaseConfig = {
+  apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
+  authDomain: "toolstr-f5308.firebaseapp.com",
+  projectId: "toolstr-f5308",
+  storageBucket: "toolstr-f5308.firebasestorage.app",
+  messagingSenderId: "649384447951",
+  appId: "1:649384447951:web:aede43e92b95a8aafbccba",
+  measurementId: "G-58QST4E6R3"
+};
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const queueRef = db.collection('queue');
+
         tg.CloudStorage.getItem('profile', (err, saved) => {
             if (!saved) return tg.close();
             myProfile = JSON.parse(saved);
@@ -323,26 +352,9 @@
             document.getElementById('my-nickname').textContent = myProfile.nickname;
             document.getElementById('my-photo').src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
 
-            checkCurrentRoom(); // resume if refreshed
+            checkCurrentRoom();
         });
 
-        // === FIREBASE CONFIG - BURAYI KENDİ PROJENLE DOLDUR ===
-        const firebaseConfig = {
-            apiKey: "AIzaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA", // kendi apiKey
-            authDomain: "chatle-xyz.firebaseapp.com",
-            projectId: "chatle-xyz",
-            storageBucket: "chatle-xyz.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456789"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        const queueRef = db.collection('queue');
-        const waitingRef = db.doc('system/waiting'); // not used, we use queue collection
-
-        // === RESUME IF REFRESHED ===
         function checkCurrentRoom() {
             tg.CloudStorage.getItem('currentRoom', (err, roomId) => {
                 if (roomId) {
@@ -361,7 +373,7 @@
             });
         }
 
-        // === START RANDOM SEARCH ===
+        // === HEMEN EŞLEŞME İÇİN YENİ SİSTEM ===
         document.getElementById('big-btn').onclick = () => {
             document.getElementById('find-screen').hidden = true;
             document.getElementById('searching-screen').hidden = false;
@@ -372,35 +384,33 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            queueUnsubscribe = queueRef.orderBy('timestamp').limit(2).onSnapshot(snapshot => {
-                const docs = snapshot.docs;
-                if (docs.length < 2) return;
+            // Her yeni eklenen veya mevcut biri varsa ANINDA eşleştir
+            queueUnsubscribe = queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+                const available = snapshot.docs.filter(doc => doc.id !== myTelegramId);
+                
+                if (available.length > 0) {
+                    const partnerDoc = available[0]; // en eskiyi al
+                    const partnerProfile = partnerDoc.data().profile;
+                    partnerId = partnerDoc.id;
 
-                let partnerDoc = null;
-                if (docs[0].id === myTelegramId) partnerDoc = docs[1];
-                else if (docs[1].id === myTelegramId) partnerDoc = docs[0];
+                    currentRoomId = [myTelegramId, partnerId].sort().join('_');
+                    const roomRef = db.doc(`rooms/${currentRoomId}`);
 
-                if (!partnerDoc) return;
+                    roomRef.set({
+                        users: [myTelegramId, partnerId],
+                        profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
+                        messages: [],
+                        friendRequests: {},
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
 
-                partnerId = partnerDoc.id;
-                const partnerProfile = partnerDoc.data().profile;
-                currentRoomId = [myTelegramId, partnerId].sort().join('_');
+                    // Queue'den ikisini de sil
+                    queueRef.doc(myTelegramId).delete();
+                    queueRef.doc(partnerId).delete();
 
-                const roomRef = db.doc(`rooms/${currentRoomId}`);
-                roomRef.set({
-                    users: [myTelegramId, partnerId],
-                    profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
-                    messages: [],
-                    friendRequests: {},
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                // clean queue
-                queueRef.doc(myTelegramId).delete();
-                queueRef.doc(partnerId).delete();
-
-                queueUnsubscribe();
-                startChat(currentRoomId, partnerProfile, partnerId);
+                    if (queueUnsubscribe) queueUnsubscribe();
+                    startChat(currentRoomId, partnerProfile, partnerId);
+                }
             });
         };
 
@@ -411,7 +421,6 @@
             document.getElementById('find-screen').hidden = false;
         };
 
-        // === START CHAT UI ===
         function startChat(roomId, partnerProfile, pId, resume = false) {
             currentRoomId = roomId;
             partnerId = pId;
@@ -421,8 +430,9 @@
             document.getElementById('partner-photo').src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
             document.getElementById('partner-name').textContent = partnerProfile.nickname;
 
-            document.getElementById('chat-screen').hidden = false;
+            document.getElementById('chat-screen').style.display = 'flex';
             document.getElementById('searching-screen').hidden = true;
+            document.getElementById('find-screen').hidden = true;
 
             const roomRef = db.doc(`rooms/${roomId}`);
             const messagesDiv = document.getElementById('messages');
@@ -434,7 +444,7 @@
                 }
                 const data = snap.data();
 
-                // Friend status
+                // Friend button
                 const req = data.friendRequests || {};
                 const iRequested = !!req[myTelegramId];
                 const heRequested = !!req[partnerId];
@@ -443,15 +453,12 @@
                     isFriends = true;
                     document.getElementById('add-friend-btn').textContent = '✓';
                     document.getElementById('add-friend-btn').disabled = true;
-                    if (!resume) {
-                        tg.HapticFeedback.notificationOccurred('success');
-                        tg.showPopup({message: 'You are now friends!'});
-                        addToFriendsList(partnerProfile);
-                    }
+                    if (!resume) tg.showPopup({message: 'You are now friends!'});
                 } else if (iRequested) {
                     document.getElementById('add-friend-btn').textContent = '✔';
                 } else if (heRequested) {
-                    document.getElementById('add-friend-btn').textContent = '✓?';
+                    document.getElementById('add-friend-btn').textContent = '?';
+                    tg.HapticFeedback.notificationOccurred('success');
                 } else {
                     document.getElementById('add-friend-btn').textContent = '+';
                 }
@@ -493,31 +500,13 @@
             });
         }
 
-        // === ADD FRIEND ===
         document.getElementById('add-friend-btn').onclick = () => {
             if (isFriends) return;
             db.doc(`rooms/${currentRoomId}`).update({
                 [`friendRequests.${myTelegramId}`]: true
             });
-            tg.HapticFeedback.impactOccurred('medium');
         };
 
-        function addToFriendsList(partnerProfile) {
-            const friendData = {
-                telegramId: partnerId,
-                nickname: partnerProfile.nickname,
-                photoUrl: partnerProfile.photoUrl || '',
-                age: partnerProfile.age,
-                country: partnerProfile.country,
-                countryName: partnerProfile.countryName
-            };
-
-            db.doc(`users/${myTelegramId}`).set({
-                friends: firebase.firestore.FieldValue.arrayUnion(friendData)
-            }, { merge: true });
-        }
-
-        // === SEND MESSAGE ===
         document.getElementById('send-btn').onclick = sendMessage;
         document.getElementById('message-input').addEventListener('keypress', e => {
             if (e.key === 'Enter') sendMessage();
@@ -537,10 +526,8 @@
             });
 
             input.value = '';
-            tg.HapticFeedback.impactOccurred('light');
         }
 
-        // === END CHAT ===
         document.getElementById('exit-btn').onclick = endChat;
 
         function endChat() {
@@ -548,7 +535,7 @@
             if (roomUnsubscribe) roomUnsubscribe();
 
             if (currentRoomId && !isFriends) {
-                // optional: db.doc(`rooms/${currentRoomId}`).delete();
+                // room silinebilir ama gerek yok, otomatik temizlenir
             }
 
             tg.CloudStorage.removeItem('currentRoom');
@@ -557,10 +544,10 @@
             partnerId = null;
             isFriends = false;
 
-            document.getElementById('chat-screen').hidden = true;
+            document.getElementById('chat-screen').style.display = 'none';
             document.getElementById('find-screen').hidden = false;
             document.getElementById('privacy-info').hidden = false;
         }
     </script>
 </body>
-  </html>
+</html>
