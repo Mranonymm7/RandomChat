@@ -269,6 +269,7 @@
         let isFriends = false;
         let queueUnsubscribe = null;
         let roomUnsubscribe = null;
+        let iAmInQueue = false;
 
         const firebaseConfig = {
           apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
@@ -283,6 +284,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const queueRef = db.collection('queue');
+        const myQueueDoc = queueRef.doc(myTelegramId);
 
         tg.CloudStorage.getItem('profile', (err, saved) => {
             if (!saved) return tg.close();
@@ -291,10 +293,10 @@
             document.getElementById('my-nickname').textContent = myProfile.nickname;
             document.getElementById('my-photo').src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
 
-            checkCurrentRoom();
+            checkCurrentRoomOrQueue();
         });
 
-        function checkCurrentRoom() {
+        function checkCurrentRoomOrQueue() {
             tg.CloudStorage.getItem('currentRoom', (err, roomId) => {
                 if (roomId) {
                     const roomRef = db.doc(`rooms/${roomId}`);
@@ -311,54 +313,68 @@
                             tg.CloudStorage.removeItem('currentRoom');
                         }
                     });
+                } else {
+                    // Check if I am in queue (after refresh)
+                    myQueueDoc.get().then(snap => {
+                        if (snap.exists) {
+                            enterSearchingMode(true);
+                        }
+                    });
                 }
             });
         }
 
-        document.getElementById('big-btn').onclick = () => {
+        function enterSearchingMode(fromRefresh = false) {
+            iAmInQueue = true;
             document.getElementById('find-screen').style.display = 'none';
             document.getElementById('searching-screen').style.display = 'flex';
 
-            const myQueueDoc = queueRef.doc(myTelegramId);
-            myQueueDoc.set({
-                profile: myProfile,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            if (!fromRefresh) {
+                myQueueDoc.set({
+                    profile: myProfile,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
 
-            // YENİ SAĞLAM EŞLEŞME SİSTEMİ - ÇAKIŞMA YOK
+            // Yeni gelen biri varsa ANINDA eşleş
             queueUnsubscribe = queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                if (snapshot.empty) return;
+                if (!iAmInQueue) return;
 
-                const docs = snapshot.docs;
-                const oldest = docs[0];
+                for (let doc of snapshot.docs) {
+                    if (doc.id !== myTelegramId) {
+                        partnerId = doc.id;
+                        const partnerProfile = doc.data().profile;
 
-                // Eğer ben en eski değilsem → en eskiyle eşleş
-                if (oldest.id !== myTelegramId) {
-                    partnerId = oldest.id;
-                    const partnerProfile = oldest.data().profile;
+                        currentRoomId = [myTelegramId, partnerId].sort((a,b) => a.localeCompare(b)).join('_');
+                        const roomRef = db.doc(`rooms/${currentRoomId}`);
 
-                    currentRoomId = [myTelegramId, partnerId].sort((a,b) => a.localeCompare(b)).join('_');
-                    const roomRef = db.doc(`rooms/${currentRoomId}`);
+                        roomRef.set({
+                            users: [myTelegramId, partnerId],
+                            profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
+                            messages: [],
+                            friendRequests: {},
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
 
-                    roomRef.set({
-                        users: [myTelegramId, partnerId],
-                        profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
-                        messages: [],
-                        friendRequests: {},
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true }).then(() => {
-                        // Queue'den sadece kendimi sil (diğeri zaten eşleştiğinde silecek)
+                        // İkisini de queue'den sil
                         myQueueDoc.delete();
+                        queueRef.doc(partnerId).delete();
+
+                        iAmInQueue = false;
                         if (queueUnsubscribe) queueUnsubscribe();
+
                         startChat(currentRoomId, partnerProfile, partnerId);
-                    });
+                        return;
+                    }
                 }
-                // Eğer ben en eskiysem → beklemeye devam et (hiçbir şey yapma)
             });
-        };
+        }
+
+        document.getElementById('big-btn').onclick = () => enterSearchingMode();
 
         document.getElementById('cancel-btn').onclick = () => {
-            queueRef.doc(myTelegramId).delete();
+            iAmInQueue = false;
+            myQueueDoc.delete();
             if (queueUnsubscribe) queueUnsubscribe();
             document.getElementById('searching-screen').style.display = 'none';
             document.getElementById('find-screen').style.display = 'flex';
@@ -465,6 +481,7 @@
         document.getElementById('exit-btn').onclick = endChat;
 
         function endChat() {
+            iAmInQueue = false;
             if (queueUnsubscribe) queueUnsubscribe();
             if (roomUnsubscribe) roomUnsubscribe();
 
