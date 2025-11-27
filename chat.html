@@ -25,7 +25,6 @@
             display: flex;
             flex-direction: column;
             overscroll-behavior: none;
-            touch-action: manipulation;
         }
 
         header {
@@ -62,14 +61,12 @@
 
         main {
             flex: 1;
-            display: flex;
-            flex-direction: column;
             position: relative;
         }
 
         .screen {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -77,10 +74,6 @@
             padding: 20px;
             text-align: center;
         }
-
-        #find-screen { background: var(--tg-bg); }
-        #searching-screen { background: var(--tg-bg); display: none; }
-        #chat-screen { display: none; flex-direction: column; }
 
         #big-btn {
             background: linear-gradient(135deg, var(--tg-button), #00aaff);
@@ -92,7 +85,6 @@
             font-weight: 700;
             box-shadow: 0 12px 35px rgba(0, 136, 204, 0.4);
             cursor: pointer;
-            min-width: 280px;
         }
 
         #cancel-btn {
@@ -103,21 +95,13 @@
             padding: 16px 40px;
             border-radius: 24px;
             font-size: 17px;
-            font-weight: 500;
         }
 
-        #searching-screen h2 {
-            font-size: 26px;
-            margin-bottom: 12px;
-        }
+        #searching-screen h2 { font-size: 26px; margin-bottom: 12px; }
+        #searching-screen p { opacity: 0.7; font-size: 17px; margin-bottom: 50px; }
 
-        #searching-screen p {
-            opacity: 0.7;
-            font-size: 17px;
-            margin-bottom: 50px;
-        }
+        #chat-screen { display: none; flex-direction: column; }
 
-        /* Chat screen stilleri aynı kaldı, sadece kısalttım */
         #chat-header {
             padding: 16px 20px;
             background: var(--tg-secondary);
@@ -156,24 +140,12 @@
             line-height: 1.4;
         }
 
-        .message.mine {
-            align-self: flex-end;
-            background: var(--tg-button);
-            border-bottom-right-radius: 6px;
-        }
+        .message.mine { align-self: flex-end; background: var(--tg-button); border-bottom-right-radius: 6px; }
+        .message.other { align-self: flex-start; background: #222; border-bottom-left-radius: 6px; }
 
-        .message.other {
-            align-self: flex-start;
-            background: #222;
-            border-bottom-left-radius: 6px;
-        }
+        .message-time { font-size: 11px; opacity: 0.7; margin-top: 6px; text-align: right; }
 
-        .message-time {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 6px;
-            text-align: right;
-        }
+        .date-separator { text-align: center; margin: 24px 0; opacity: 0.6; font-size: 13px; }
 
         #privacy-info {
             text-align: center;
@@ -236,10 +208,7 @@
             text-decoration: none;
         }
 
-        .tab.active {
-            color: var(--tg-button);
-            font-weight: 700;
-        }
+        .tab.active { color: var(--tg-button); font-weight: 700; }
     </style>
 </head>
 <body>
@@ -304,14 +273,15 @@
         let roomUnsubscribe = null;
 
         const firebaseConfig = {
-  apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
-  authDomain: "toolstr-f5308.firebaseapp.com",
-  projectId: "toolstr-f5308",
-  storageBucket: "toolstr-f5308.firebasestorage.app",
-  messagingSenderId: "649384447951",
-  appId: "1:649384447951:web:aede43e92b95a8aafbccba",
-  measurementId: "G-58QST4E6R3"
-};
+          apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
+          authDomain: "toolstr-f5308.firebaseapp.com",
+          projectId: "toolstr-f5308",
+          storageBucket: "toolstr-f5308.firebasestorage.app",
+          messagingSenderId: "649384447951",
+          appId: "1:649384447951:web:aede43e92b95a8aafbccba",
+          measurementId: "G-58QST4E6R3"
+        };
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const queueRef = db.collection('queue');
@@ -326,7 +296,22 @@
             checkCurrentRoom();
         });
 
-        // ... (geri kalan script aynı, eşleşme sistemi aynı, sadece layout düzeltildi)
+        function checkCurrentRoom() {
+            tg.CloudStorage.getItem('currentRoom', (err, roomId) => {
+                if (roomId) {
+                    const roomRef = db.doc(`rooms/${roomId}`);
+                    roomRef.get().then(snap => {
+                        if (snap.exists) {
+                            const data = snap.data();
+                            partnerId = data.users.find(id => id !== myTelegramId);
+                            if (partnerId && data.profiles && data.profiles[partnerId]) {
+                                startChat(roomId, data.profiles[partnerId], partnerId, true);
+                            }
+                        }
+                    });
+                }
+            });
+        }
 
         document.getElementById('big-btn').onclick = () => {
             document.getElementById('find-screen').style.display = 'none';
@@ -336,16 +321,24 @@
             myQueueDoc.set({
                 profile: myProfile,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                console.log("Added to queue");
             });
 
+            // TAM ÇÖZÜM: limit olmadan tüm queue'yu dinle + en eski olanla eşleş
             queueUnsubscribe = queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                const available = snapshot.docs.filter(doc => doc.id !== myTelegramId);
+                if (!snapshot || snapshot.empty) return;
+
+                const allDocs = snapshot.docs;
+                const available = allDocs.filter(doc => doc.id !== myTelegramId);
+
                 if (available.length > 0) {
-                    const partnerDoc = available[0];
+                    const partnerDoc = available[0]; // en eski bekleyen
                     const partnerProfile = partnerDoc.data().profile;
                     partnerId = partnerDoc.id;
 
-                    currentRoomId = [myTelegramId, partnerId].sort().join('_');
+                    currentRoomId = [myTelegramId, partnerId].sort((a,b) => a.localeCompare(b)).join('_');
+
                     const roomRef = db.doc(`rooms/${currentRoomId}`);
 
                     roomRef.set({
@@ -354,31 +347,141 @@
                         messages: [],
                         friendRequests: {},
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                    }, { merge: true }).then(() => {
+                        // Queue'den temizle
+                        queueRef.doc(myTelegramId).delete();
+                        queueRef.doc(partnerId).delete();
 
-                    queueRef.doc(myTelegramId).delete();
-                    queueRef.doc(partnerId).delete();
-
-                    if (queueUnsubscribe) queueUnsubscribe();
-                    startChat(currentRoomId, partnerProfile, partnerId);
+                        if (queueUnsubscribe) queueUnsubscribe();
+                        startChat(currentRoomId, partnerProfile, partnerId);
+                    });
                 }
             });
         };
 
-        // cancel, startChat, sendMessage, endChat vs. aynı kalıyor...
+        document.getElementById('cancel-btn').onclick = () => {
+            queueRef.doc(myTelegramId).delete();
+            if (queueUnsubscribe) queueUnsubscribe();
+            document.getElementById('searching-screen').style.display = 'none';
+            document.getElementById('find-screen').style.display = 'flex';
+        };
 
         function startChat(roomId, partnerProfile, pId, resume = false) {
             currentRoomId = roomId;
             partnerId = pId;
+
             tg.CloudStorage.setItem('currentRoom', roomId);
 
             document.getElementById('partner-photo').src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
             document.getElementById('partner-name').textContent = partnerProfile.nickname;
 
             document.getElementById('chat-screen').style.display = 'flex';
+
+            const roomRef = db.doc(`rooms/${roomId}`);
+            const messagesDiv = document.getElementById('messages');
+
+            roomUnsubscribe = roomRef.onSnapshot(snap => {
+                if (!snap.exists) {
+                    endChat();
+                    return;
+                }
+                const data = snap.data();
+
+                // Friend button
+                const req = data.friendRequests || {};
+                const iRequested = !!req[myTelegramId];
+                const heRequested = !!req[partnerId];
+
+                if (iRequested && heRequested) {
+                    isFriends = true;
+                    document.getElementById('add-friend-btn').textContent = '✓';
+                    document.getElementById('add-friend-btn').disabled = true;
+                    if (!resume) tg.showPopup({message: 'You are now friends!'});
+                } else if (iRequested) {
+                    document.getElementById('add-friend-btn').textContent = '✔';
+                } else if (heRequested) {
+                    document.getElementById('add-friend-btn').textContent = '?';
+                } else {
+                    document.getElementById('add-friend-btn').textContent = '+';
+                }
+
+                // Messages render
+                const messages = data.messages || [];
+                messagesDiv.innerHTML = '';
+                let lastDate = '';
+
+                messages.forEach(msg => {
+                    const msgDate = msg.timestamp ? msg.timestamp.toDate() : new Date();
+                    const dateStr = msgDate.toLocaleDateString();
+
+                    if (dateStr !== lastDate) {
+                        const sep = document.createElement('div');
+                        sep.className = 'date-separator';
+                        sep.textContent = dateStr;
+                        messagesDiv.appendChild(sep);
+                        lastDate = dateStr;
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `message ${msg.sender === myTelegramId ? 'mine' : 'other'}`;
+                    bubble.textContent = msg.text;
+
+                    const time = document.createElement('div');
+                    time.className = 'message-time';
+                    time.textContent = msgDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                    bubble.appendChild(time);
+
+                    messagesDiv.appendChild(bubble);
+                });
+
+                if (messages.length > 0) document.getElementById('privacy-info').hidden = true;
+
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
         }
 
-        // diğer fonksiyonlar aynı...
+        document.getElementById('add-friend-btn').onclick = () => {
+            if (isFriends || !currentRoomId) return;
+            db.doc(`rooms/${currentRoomId}`).update({
+                [`friendRequests.${myTelegramId}`]: true
+            });
+        };
+
+        document.getElementById('send-btn').onclick = sendMessage;
+        document.getElementById('message-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text || !currentRoomId) return;
+
+            db.doc(`rooms/${currentRoomId}`).update({
+                messages: firebase.firestore.FieldValue.arrayUnion({
+                    text,
+                    sender: myTelegramId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            });
+
+            input.value = '';
+        }
+
+        document.getElementById('exit-btn').onclick = endChat;
+
+        function endChat() {
+            if (queueUnsubscribe) queueUnsubscribe();
+            if (roomUnsubscribe) roomUnsubscribe();
+
+            tg.CloudStorage.removeItem('currentRoom');
+
+            currentRoomId = null;
+            partnerId = null;
+            isFriends = false;
+
+            document.getElementById('chat-screen').style.display = 'none';
+            document.getElementById('find-screen').style.display = 'flex';
+            document.getElementById('privacy-info').hidden = false;
+        }
     </script>
 </body>
 </html>
