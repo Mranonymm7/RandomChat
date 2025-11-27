@@ -1,10 +1,9 @@
-<!-- chat.html -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chatle — Random Chat</title>
+<title>Chatle</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -15,54 +14,128 @@
     --bg:#071226; --panel:#0c1724; --muted:#9fb3c6; --text:#eaf6ff; --accent:#1ea7ff;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
-  header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  html,body{height:100%}
+  body{
+    font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* HEADER */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-bottom:1px solid rgba(255,255,255,0.03);
+  }
   .brand{font-weight:800;font-size:20px;background:linear-gradient(90deg,#7de0ff,#5a8bff);-webkit-background-clip:text;color:transparent}
-  .user{display:flex;align-items:center;gap:12px}
-  .avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
-  main{flex:1;display:flex;align-items:center;justify-content:center;padding:30px}
-  .card{width:100%;max-width:820px;background:var(--panel);border-radius:14px;padding:34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+  .user{display:flex;align-items:center;gap:10px}
+  .avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+
+  /* MAIN */
+  main{
+    flex:1;
+    padding:28px 18px 110px; /* bottom padding = footer height + spacing */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .card{
+    width:100%;
+    max-width:820px;
+    background:var(--panel);
+    border-radius:14px;
+    padding:34px;
+    text-align:center;
+    box-shadow:0 10px 40px rgba(0,0,0,0.6);
+  }
   h1{font-size:22px;margin-bottom:8px}
-  p.desc{color:var(--muted);margin-bottom:20px}
-  button#start{background:linear-gradient(90deg,var(--accent),#0084ff);color:white;border:none;padding:16px 64px;border-radius:28px;font-weight:800;font-size:16px;cursor:pointer}
+  p.sub{color:var(--muted);margin-bottom:20px}
+  button#start{
+    background:linear-gradient(90deg,var(--accent),#0084ff);
+    color:white;border:none;padding:16px 64px;border-radius:28px;font-weight:800;font-size:16px;cursor:pointer;
+  }
   #searching{display:none;margin-top:18px}
   .small{color:var(--muted);font-size:14px}
-  button#cancel{background:none;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:10px 18px;border-radius:12px;cursor:pointer}
-  footer{display:flex;background:var(--panel);border-top:1px solid rgba(255,255,255,0.04)}
-  .tab{flex:1;padding:14px;text-align:center;color:var(--muted)}
-  .tab.active{color:var(--accent);font-weight:700}
+
+  /* FIXED FOOTER TABS */
+  footer{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    height:80px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.02));
+    border-top:1px solid rgba(255,255,255,0.03);
+    z-index:9999; /* very high so nothing sits above it */
+  }
+  .nav{
+    width:100%;
+    max-width:820px;
+    display:flex;
+    gap:8px;
+    padding:12px;
+    justify-content:space-between;
+  }
+  .tab{
+    flex:1;
+    background:transparent;
+    border-radius:12px;
+    padding:12px 8px;
+    text-align:center;
+    color:var(--muted);
+    font-weight:600;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active{ color:var(--accent); font-weight:800; box-shadow: inset 0 -3px 0 rgba(30,167,255,0.08) }
+
+  /* ensure clickable on mobile */
+  .tab:active{ transform:translateY(1px) }
 </style>
 </head>
 <body>
 <header>
   <div class="brand">Chatle</div>
   <div class="user">
-    <img id="my-photo" class="avatar" src="">
-    <div id="my-nick" style="font-weight:700"></div>
+    <img id="myPhoto" class="avatar" src="" alt="avatar">
+    <div id="myNick" style="font-weight:700"></div>
   </div>
 </header>
 
 <main>
-  <div class="card">
+  <div class="card" role="main">
     <h1>Start a Random Chat</h1>
-    <p class="desc">Connect instantly with another user. Press the button below to join the queue.</p>
+    <p class="sub">Press the button to join the queue. We'll connect you with another user.</p>
 
-    <button id="start" disabled>Loading...</button>
+    <div id="idle">
+      <button id="start">Start Random Chat</button>
+    </div>
 
     <div id="searching">
-      <div id="searching-text" class="small">Searching for a partner...</div>
+      <div class="small" id="searchingText">Searching for a partner...</div>
       <div style="margin-top:12px">
-        <button id="cancel">Cancel</button>
+        <button id="cancel" style="background:none;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:10px 18px;border-radius:12px;cursor:pointer">Cancel</button>
       </div>
     </div>
   </div>
 </main>
 
 <footer>
-  <div class="tab active">Home</div>
-  <div class="tab">Chats</div>
-  <div class="tab">Profile</div>
-  <div class="tab">Discover</div>
+  <div class="nav" role="navigation" aria-label="Main navigation">
+    <div id="tabHome" class="tab active" data-href="/chat.html">Home</div>
+    <div id="tabChats" class="tab" data-href="/chats.html">Chats</div>
+    <div id="tabProfile" class="tab" data-href="/profile.html">Profile</div>
+    <div id="tabDiscover" class="tab" data-href="/discover.html">Discover</div>
+  </div>
 </footer>
 
 <script>
@@ -71,7 +144,7 @@ Telegram.WebApp.expand();
 
 const tg = Telegram.WebApp;
 
-// FIREBASE config (your project)
+// Firebase config (your project)
 const firebaseConfig = {
   apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
   authDomain: "toolstr-f5308.firebaseapp.com",
@@ -84,74 +157,65 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// UI refs
+const myPhoto = document.getElementById('myPhoto');
+const myNick = document.getElementById('myNick');
 const startBtn = document.getElementById('start');
 const cancelBtn = document.getElementById('cancel');
+const idleDiv = document.getElementById('idle');
 const searchingDiv = document.getElementById('searching');
-const searchingText = document.getElementById('searching-text');
-const myPhoto = document.getElementById('my-photo');
-const myNick = document.getElementById('my-nick');
+const searchingText = document.getElementById('searchingText');
+
+const tabHome = document.getElementById('tabHome');
+const tabChats = document.getElementById('tabChats');
+const tabProfile = document.getElementById('tabProfile');
+const tabDiscover = document.getElementById('tabDiscover');
 
 const initUser = tg.initDataUnsafe?.user;
-if (!initUser) {
-  console.error("Telegram user missing");
-  tg.showPopup({message:"Cannot read Telegram user data"});
-}
-
 const myId = initUser?.id?.toString();
 
 let myProfile = null;
 let queueUnsub = null;
 let inQueue = false;
+
 const queueRef = db.collection('queue');
 const roomsRef = db.collection('rooms');
 const myQueueDoc = queueRef.doc(myId);
 
-// Read profile from Telegram CloudStorage
+// Load profile from Telegram CloudStorage
 tg.CloudStorage.getItem('profile', (err, saved) => {
   if (err) {
-    console.error("CloudStorage error:", err);
-    tg.showPopup({message:"Profile load failed"});
-    startBtn.textContent = "Profile error";
-    return;
+    console.warn("CloudStorage error", err);
   }
-  if (!saved) {
-    tg.showPopup({message:"Profile not found in CloudStorage. Please save your profile first."});
-    startBtn.textContent = "No profile";
-    startBtn.disabled = true;
-    return;
-  }
-  try {
-    myProfile = JSON.parse(saved);
-  } catch(e) {
-    console.error("Profile parse error", e);
-    tg.showPopup({message:"Profile corrupted"});
-    startBtn.textContent = "Profile error";
-    return;
-  }
+  let p = null;
+  try { p = saved ? JSON.parse(saved) : null; } catch(e){ p = null; }
+  myProfile = p || {
+    nickname: initUser?.first_name || 'User',
+    photoUrl: initUser?.photo_url || ''
+  };
 
-  myNick.textContent = myProfile.nickname || (initUser?.first_name || "User");
-  myPhoto.src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-  startBtn.textContent = "Start Random Chat";
-  startBtn.disabled = false;
+  myNick.textContent = myProfile.nickname || (initUser?.first_name || 'User');
+  myPhoto.src = myProfile.photoUrl || initUser?.photo_url || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
 });
 
+// ---------- queue / matching ----------
 function safeProfile(p){
   if (!p) return {};
   return {
-    nickname: p.nickname || "",
-    photoUrl: p.photoUrl || "",
+    nickname: p.nickname || initUser?.first_name || 'User',
+    photoUrl: p.photoUrl || (initUser?.photo_url || ''),
     age: p.age || null,
-    gender: p.gender || "",
-    country: p.country || "",
-    countryName: p.countryName || "",
-    bio: p.bio || ""
+    gender: p.gender || '',
+    country: p.country || '',
+    countryName: p.countryName || '',
+    bio: p.bio || ''
   };
 }
 
-async function enterQueue(){
+async function joinQueue(){
   if (!myProfile) { tg.showPopup({message:"Profile not ready"}); return; }
   inQueue = true;
-  startBtn.style.display = 'none';
+  idleDiv.style.display = 'none';
   searchingDiv.style.display = 'block';
   searchingText.textContent = "Searching for a partner...";
 
@@ -163,18 +227,18 @@ async function enterQueue(){
   try {
     await myQueueDoc.set(payload);
   } catch(e){
-    console.error("Failed to write queue doc", e);
+    console.error("joinQueue set failed", e);
     tg.showPopup({message:"Failed to join queue"});
     inQueue = false;
-    startBtn.style.display = 'inline-block';
+    idleDiv.style.display = 'block';
     searchingDiv.style.display = 'none';
     return;
   }
 
   queueUnsub = queueRef.orderBy('ts','asc').onSnapshot(async snap => {
     if (!inQueue) return;
-    console.log("Queue snapshot:", snap.docs.map(d=>d.id));
-    for (let doc of snap.docs){
+    // console.log("queue snapshot", snap.docs.map(d=>d.id));
+    for (let doc of snap.docs) {
       if (doc.id === myId) continue;
       const partnerId = doc.id;
       const partnerProfile = doc.data().profile || {};
@@ -188,42 +252,78 @@ async function enterQueue(){
             [myId]: safeProfile(myProfile),
             [partnerId]: safeProfile(partnerProfile)
           },
-          messages: [],            // ensures array exists
-          friendRequests: {},
           active: true,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       } catch(e){
-        console.error("Failed to create room", e);
+        console.error("create room failed", e);
       }
 
-      // remove both queue docs
-      try { await myQueueDoc.delete(); } catch(e){ console.warn("delete myQueueDoc", e); }
-      try { await queueRef.doc(partnerId).delete(); } catch(e){ console.warn("delete partnerQueueDoc", e); }
+      try { await myQueueDoc.delete(); } catch(e){}
+      try { await queueRef.doc(partnerId).delete(); } catch(e){}
 
       if (queueUnsub) queueUnsub();
       inQueue = false;
 
-      // navigate to chat page (fixed .html)
+      // Navigate to chat room
       const url = `/special.html?room=${encodeURIComponent(roomId)}&partner=${encodeURIComponent(partnerId)}`;
       window.location.href = url;
       return;
     }
   }, err => {
-    console.error("Queue snapshot error", err);
+    console.error("queue listener err", err);
     tg.showPopup({message:"Queue listener error"});
   });
 }
 
-startBtn.addEventListener('click', () => enterQueue());
-
-cancelBtn.addEventListener('click', async () => {
+async function leaveQueue(){
   inQueue = false;
   if (queueUnsub) queueUnsub();
-  try { await myQueueDoc.delete(); } catch(e){ /* ignore */ }
-  startBtn.style.display = 'inline-block';
+  try { await myQueueDoc.delete(); } catch(e){}
   searchingDiv.style.display = 'none';
+  idleDiv.style.display = 'block';
+}
+
+// start/cancel handlers
+startBtn.addEventListener('click', joinQueue);
+cancelBtn.addEventListener('click', leaveQueue);
+
+// ---------- bottom tab navigation ----------
+function setActiveTab(activeEl){
+  [tabHome, tabChats, tabProfile, tabDiscover].forEach(el => {
+    el.classList.toggle('active', el === activeEl);
+  });
+}
+
+function navigateTo(href, tabEl){
+  // Use Telegram API to open links when necessary; fallback to location.href
+  // On webapp, window.location.href works fine for internal pages.
+  setActiveTab(tabEl);
+  try {
+    window.location.href = href;
+  } catch(e){
+    console.error("Navigation failed", e);
+    tg.showPopup({message:"Navigation failed"});
+  }
+}
+
+// attach click handlers (ensure high responsiveness)
+tabHome.addEventListener('click', () => navigateTo('/chat.html', tabHome));
+tabChats.addEventListener('click', () => navigateTo('/chats.html', tabChats));
+tabProfile.addEventListener('click', () => navigateTo('/profile.html', tabProfile));
+tabDiscover.addEventListener('click', () => navigateTo('/discover.html', tabDiscover));
+
+// Also allow long-press / keyboard activation
+[tabHome, tabChats, tabProfile, tabDiscover].forEach(el=>{
+  el.setAttribute('tabindex','0');
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') el.click(); });
 });
+
+// Safety: make sure footer isn't covered by other elements
+// (already handled by z-index and main bottom padding)
+
+// Debug logs (useful when testing)
+console.log("Chatle chat.html loaded. myId:", myId);
 </script>
 </body>
 </html>
