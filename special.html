@@ -24,31 +24,56 @@
             flex-direction: column;
         }
         header {
-            padding: 16px 20px;
+            padding: 18px 20px;
             background: var(--tg-secondary);
-            display: flex;
-            align-items: center;
-            gap: 14px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+            position: relative;
         }
-        header img {
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 28px;
+            opacity: 0.7;
+        }
+        .partner-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--tg-button);
+            box-shadow: 0 0 30px rgba(0,136,204,0.4);
+        }
+        .partner-name {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 12px 0 6px;
+        }
+        .partner-details {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        .partner-bio {
+            font-size: 15px;
+            opacity: 0.7;
+            font-style: italic;
+            max-width: 80%;
+            margin: 0 auto;
+        }
+        #add-btn {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
             width: 46px;
             height: 46px;
             border-radius: 50%;
-            border: 3px solid var(--tg-button);
-        }
-        header .info { flex: 1; }
-        header .name { font-weight: 600; font-size: 19px; }
-        header .status { font-size: 14px; opacity: 0.7; }
-        #add-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
             background: rgba(255,255,255,0.12);
             border: none;
-            font-size: 26px;
+            font-size: 28px;
             color: white;
-            cursor: pointer;
         }
         #messages {
             flex: 1;
@@ -64,7 +89,7 @@
             border-radius: 22px;
             line-height: 1.45;
             word-wrap: break-word;
-            animation: fadeIn 0.3s;
+            animation: msgIn 0.3s;
         }
         .message.mine {
             align-self: flex-end;
@@ -82,16 +107,16 @@
             margin-top: 6px;
             text-align: right;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @keyframes msgIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
     </style>
 </head>
 <body>
     <header>
-        <img id="partner-photo" src="">
-        <div class="info">
-            <div class="name" id="partner-name"></div>
-            <div class="status">online</div>
-        </div>
+        <div class="back-btn" onclick="history.back()">←</div>
+        <img class="partner-photo" id="partner-photo" src="">
+        <div class="partner-name" id="partner-name"></div>
+        <div class="partner-details" id="partner-details"></div>
+        <div class="partner-bio" id="partner-bio"></div>
         <button id="add-btn">+</button>
     </header>
 
@@ -100,10 +125,10 @@
     <script>
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
+
         Telegram.WebApp.MainButton.text = "End Chat";
         Telegram.WebApp.MainButton.color = "#ff4444";
         Telegram.WebApp.MainButton.show();
-        Telegram.WebApp.MainButton.onClick(() => location.href = "/chat");
 
         const urlParams = new URLSearchParams(location.search);
         const roomId = urlParams.get('room');
@@ -123,17 +148,27 @@
         const db = firebase.firestore();
         const roomRef = db.doc(`rooms/${roomId}`);
 
+        const myId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+
         Telegram.WebApp.CloudStorage.getItem('profile', (err, saved) => {
             const myProfile = JSON.parse(saved);
-            const myId = Telegram.WebApp.initDataUnsafe.user.id.toString();
 
-            roomRef.onSnapshot(snap => {
+            const unsub = roomRef.onSnapshot(snap => {
+                if (!snap.exists || !snap.data().active) {
+                    Telegram.WebApp.showPopup({message: "Chat ended by the other person"});
+                    location.href = "/chat";
+                    return;
+                }
+
                 const data = snap.data();
-                const partnerProfile = data.profiles[partnerId];
+                const partner = data.profiles[partnerId];
 
-                document.getElementById('partner-photo').src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-                document.getElementById('partner-name').textContent = partnerProfile.nickname;
+                document.getElementById('partner-photo').src = partner.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+                document.getElementById('partner-name').textContent = partner.nickname;
+                document.getElementById('partner-details').textContent = `\( {partner.age} • \){partner.gender === 'male' ? '♂' : partner.gender === 'female' ? '♀' : '⚧'} • ${partner.countryName || partner.country}`;
+                document.getElementById('partner-bio').textContent = partner.bio || '';
 
+                // Friend button logic
                 const req = data.friendRequests || {};
                 if (req[myId] && req[partnerId]) {
                     document.getElementById('add-btn').textContent = '✓';
@@ -142,11 +177,16 @@
                     document.getElementById('add-btn').textContent = '✔';
                 } else if (req[partnerId]) {
                     document.getElementById('add-btn').textContent = '?';
+                    Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    Telegram.WebApp.showPopup({message: "Friend request received!"});
+                } else {
+                    document.getElementById('add-btn').textContent = '+';
                 }
 
+                // Messages
                 const msgs = data.messages || [];
-                const div = document.getElementById('messages');
-                div.innerHTML = '';
+                const container = document.getElementById('messages');
+                container.innerHTML = '';
 
                 let lastDate = '';
                 msgs.forEach(m => {
@@ -159,7 +199,7 @@
                         sep.style.fontSize = '13px';
                         sep.style.margin = '20px 0';
                         sep.textContent = dateStr;
-                        div.appendChild(sep);
+                        container.appendChild(sep);
                         lastDate = dateStr;
                     }
 
@@ -172,15 +212,22 @@
                     time.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                     bubble.appendChild(time);
 
-                    div.appendChild(bubble);
+                    container.appendChild(bubble);
                 });
-                div.scrollTop = div.scrollHeight;
+                container.scrollTop = container.scrollHeight;
+            });
+
+            document.getElementById('add-btn').onclick = () => {
+                roomRef.update({[`friendRequests.${myId}`]: true});
+                Telegram.WebApp.showPopup({message: "Friend request sent!"});
+            };
+
+            Telegram.WebApp.MainButton.onClick(() => {
+                roomRef.update({active: false});
+                Telegram.WebApp.showPopup({message: "Chat ended"});
+                location.href = "/chat";
             });
         });
-
-        document.getElementById('add-btn').onclick = () => {
-            roomRef.update({[`friendRequests.${Telegram.WebApp.initDataUnsafe.user.id}`]: true});
-        };
     </script>
 </body>
 </html>
