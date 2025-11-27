@@ -145,8 +145,6 @@
 
         .message-time { font-size: 11px; opacity: 0.7; margin-top: 6px; text-align: right; }
 
-        .date-separator { text-align: center; margin: 24px 0; opacity: 0.6; font-size: 13px; }
-
         #privacy-info {
             text-align: center;
             padding: 30px 20px;
@@ -225,7 +223,7 @@
             <button id="big-btn">Start Random Chat</button>
         </div>
 
-        <div id="searching-screen" class="screen">
+        <div id="searching-screen" class="screen" style="display:none">
             <h2>Finding someone to chat with...</h2>
             <p>This usually takes just a few seconds</p>
             <button id="cancel-btn">Cancel</button>
@@ -304,9 +302,13 @@
                         if (snap.exists) {
                             const data = snap.data();
                             partnerId = data.users.find(id => id !== myTelegramId);
-                            if (partnerId && data.profiles && data.profiles[partnerId]) {
+                            if (partnerId && data.profiles?.[partnerId]) {
                                 startChat(roomId, data.profiles[partnerId], partnerId, true);
+                            } else {
+                                tg.CloudStorage.removeItem('currentRoom');
                             }
+                        } else {
+                            tg.CloudStorage.removeItem('currentRoom');
                         }
                     });
                 }
@@ -321,24 +323,21 @@
             myQueueDoc.set({
                 profile: myProfile,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                console.log("Added to queue");
             });
 
-            // TAM ÇÖZÜM: limit olmadan tüm queue'yu dinle + en eski olanla eşleş
+            // YENİ SAĞLAM EŞLEŞME SİSTEMİ - ÇAKIŞMA YOK
             queueUnsubscribe = queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                if (!snapshot || snapshot.empty) return;
+                if (snapshot.empty) return;
 
-                const allDocs = snapshot.docs;
-                const available = allDocs.filter(doc => doc.id !== myTelegramId);
+                const docs = snapshot.docs;
+                const oldest = docs[0];
 
-                if (available.length > 0) {
-                    const partnerDoc = available[0]; // en eski bekleyen
-                    const partnerProfile = partnerDoc.data().profile;
-                    partnerId = partnerDoc.id;
+                // Eğer ben en eski değilsem → en eskiyle eşleş
+                if (oldest.id !== myTelegramId) {
+                    partnerId = oldest.id;
+                    const partnerProfile = oldest.data().profile;
 
                     currentRoomId = [myTelegramId, partnerId].sort((a,b) => a.localeCompare(b)).join('_');
-
                     const roomRef = db.doc(`rooms/${currentRoomId}`);
 
                     roomRef.set({
@@ -348,14 +347,13 @@
                         friendRequests: {},
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     }, { merge: true }).then(() => {
-                        // Queue'den temizle
-                        queueRef.doc(myTelegramId).delete();
-                        queueRef.doc(partnerId).delete();
-
+                        // Queue'den sadece kendimi sil (diğeri zaten eşleştiğinde silecek)
+                        myQueueDoc.delete();
                         if (queueUnsubscribe) queueUnsubscribe();
                         startChat(currentRoomId, partnerProfile, partnerId);
                     });
                 }
+                // Eğer ben en eskiysem → beklemeye devam et (hiçbir şey yapma)
             });
         };
 
@@ -387,7 +385,6 @@
                 }
                 const data = snap.data();
 
-                // Friend button
                 const req = data.friendRequests || {};
                 const iRequested = !!req[myTelegramId];
                 const heRequested = !!req[partnerId];
@@ -405,7 +402,6 @@
                     document.getElementById('add-friend-btn').textContent = '+';
                 }
 
-                // Messages render
                 const messages = data.messages || [];
                 messagesDiv.innerHTML = '';
                 let lastDate = '';
@@ -471,6 +467,10 @@
         function endChat() {
             if (queueUnsubscribe) queueUnsubscribe();
             if (roomUnsubscribe) roomUnsubscribe();
+
+            if (currentRoomId && !isFriends) {
+                db.doc(`rooms/${currentRoomId}`).delete().catch(() => {});
+            }
 
             tg.CloudStorage.removeItem('currentRoom');
 
