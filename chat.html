@@ -52,9 +52,11 @@
         main {
             flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
+            gap: 30px;
         }
         #big-btn {
             background: linear-gradient(135deg, var(--tg-button), #00aaff);
@@ -66,9 +68,20 @@
             font-weight: 800;
             box-shadow: 0 15px 40px rgba(0, 136, 204, 0.45);
             cursor: pointer;
-            transition: all 0.3s;
         }
-        #big-btn:active { transform: scale(0.95); }
+        #searching-text {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+        #cancel-btn {
+            background: none;
+            border: 1.5px solid #666;
+            color: #aaa;
+            padding: 16px 40px;
+            border-radius: 24px;
+            font-size: 17px;
+        }
         footer {
             display: flex;
             background: var(--tg-secondary);
@@ -95,7 +108,14 @@
     </header>
 
     <main>
-        <button id="big-btn">Start Random Chat</button>
+        <div id="start-screen">
+            <button id="big-btn">Start Random Chat</button>
+        </div>
+
+        <div id="searching-screen" style="display:none">
+            <div id="searching-text">Finding someone to chat with...<br><span style="font-size:16px;opacity:0.7;margin-top:12px;display:block">This usually takes just a few seconds</span></div>
+            <button id="cancel-btn">Cancel</button>
+        </div>
     </main>
 
     <footer>
@@ -110,8 +130,7 @@
         Telegram.WebApp.expand();
 
         const tg = Telegram.WebApp;
-        const user = tg.initDataUnsafe.user;
-        const myTelegramId = user.id.toString();
+        const myId = tg.initDataUnsafe.user.id.toString();
 
         const firebaseConfig = {
           apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
@@ -126,9 +145,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const queueRef = db.collection('queue');
-        const myQueueDoc = queueRef.doc(myTelegramId);
+        const myQueueDoc = queueRef.doc(myId);
 
         let myProfile = null;
+        let unsub = null;
 
         tg.CloudStorage.getItem('profile', (err, saved) => {
             if (!saved) return tg.close();
@@ -138,38 +158,48 @@
         });
 
         document.getElementById('big-btn').onclick = () => {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('searching-screen').style.display = 'flex';
+
             myQueueDoc.set({
                 profile: myProfile,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                ts: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            const unsub = queueRef.orderBy('timestamp', 'asc').onSnapshot(snap => {
+            unsub = queueRef.orderBy('ts', 'asc').onSnapshot(snap => {
                 for (let doc of snap.docs) {
-                    if (doc.id !== myTelegramId) {
+                    if (doc.id !== myId) {
                         const partnerId = doc.id;
                         const partnerProfile = doc.data().profile;
 
-                        const roomId = [myTelegramId, partnerId].sort().join('_');
+                        const roomId = [myId, partnerId].sort().join('_');
 
                         db.doc(`rooms/${roomId}`).set({
-                            users: [myTelegramId, partnerId],
-                            profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
+                            users: [myId, partnerId],
+                            profiles: { [myId]: myProfile, [partnerId]: partnerProfile },
                             messages: [],
                             friendRequests: {},
+                            active: true,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
                         myQueueDoc.delete();
                         queueRef.doc(partnerId).delete();
-                        unsub();
 
-                        // EŞLEŞİNCE SPECIAL'E GİT
+                        unsub();
                         location.href = `/special?room=\( {roomId}&partner= \){partnerId}`;
                         return;
                     }
                 }
             });
         };
+
+        document.getElementById('cancel-btn').onclick = () => {
+            myQueueDoc.delete();
+            if (unsub) unsub();
+            document.getElementById('searching-screen').style.display = 'none';
+            document.getElementById('start-screen').style.display = 'block';
+        };
     </script>
 </body>
-</html>
+    </html>
