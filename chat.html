@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatle</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -12,11 +12,9 @@
             --tg-bg: var(--tg-theme-bg-color, #000000);
             --tg-secondary: var(--tg-theme-secondary-bg-color, #111111);
             --tg-text: var(--tg-theme-text-color, #ffffff);
-            --tg-hint: var(--tg-theme-hint-color, #888888);
             --tg-button: var(--tg-theme-button-color, #0088cc);
         }
-
-        * { box-sizing: border-box; margin:0; padding:0; }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
             background: var(--tg-bg);
             color: var(--tg-text);
@@ -24,18 +22,14 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overscroll-behavior: none;
         }
-
         header {
             padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.08);
-            flex-shrink: 0;
         }
-
         .logo {
             font-size: 28px;
             font-weight: 900;
@@ -43,169 +37,51 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
         .user-info {
             display: flex;
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 17px;
         }
-
         .user-info img {
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            border: 2px solid var(--tg-button);
+            border: 2.5px solid var(--tg-button);
         }
-
         main {
             flex: 1;
-            position: relative;
-        }
-
-        .screen {
-            position: absolute;
-            inset: 0;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            text-align: center;
+            padding: 40px 20px;
         }
-
         #big-btn {
             background: linear-gradient(135deg, var(--tg-button), #00aaff);
-            color: #fff;
+            color: white;
             border: none;
-            border-radius: 28px;
-            padding: 24px 80px;
-            font-size: 21px;
-            font-weight: 700;
-            box-shadow: 0 12px 35px rgba(0, 136, 204, 0.4);
-            cursor: pointer;
-        }
-
-        #cancel-btn {
-            margin-top: 40px;
-            background: none;
-            border: 1.5px solid #555;
-            color: var(--tg-hint);
-            padding: 16px 40px;
-            border-radius: 24px;
-            font-size: 17px;
-        }
-
-        #searching-screen h2 { font-size: 26px; margin-bottom: 12px; }
-        #searching-screen p { opacity: 0.7; font-size: 17px; margin-bottom: 50px; }
-
-        #chat-screen { display: none; flex-direction: column; }
-
-        #chat-header {
-            padding: 16px 20px;
-            background: var(--tg-secondary);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        #partner-name { flex: 1; font-weight: 600; font-size: 19px; }
-
-        #add-friend-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.12);
-            border: none;
-            font-size: 26px;
-            color: #fff;
-        }
-
-        #messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .message {
-            max-width: 82%;
-            padding: 13px 18px;
-            border-radius: 22px;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-
-        .message.mine { align-self: flex-end; background: var(--tg-button); border-bottom-right-radius: 6px; }
-        .message.other { align-self: flex-start; background: #222; border-bottom-left-radius: 6px; }
-
-        .message-time { font-size: 11px; opacity: 0.7; margin-top: 6px; text-align: right; }
-
-        #privacy-info {
-            text-align: center;
-            padding: 30px 20px;
-            opacity: 0.7;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        #input-area {
-            padding: 16px 20px;
-            background: var(--tg-secondary);
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        #message-input {
-            flex: 1;
-            padding: 16px 20px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 26px;
-            color: var(--tg-text);
-            font-size: 17px;
-        }
-
-        #send-btn {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: var(--tg-button);
-            border: none;
-            color: #fff;
+            border-radius: 30px;
+            padding: 26px 90px;
             font-size: 22px;
+            font-weight: 800;
+            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.45);
+            cursor: pointer;
+            transition: all 0.3s;
         }
-
-        #exit-btn {
-            background: #ff4444;
-            color: #fff;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
+        #big-btn:active { transform: scale(0.95); }
         footer {
             display: flex;
             background: var(--tg-secondary);
             border-top: 1px solid rgba(255,255,255,0.08);
         }
-
         .tab {
             flex: 1;
             padding: 18px 0;
             text-align: center;
-            font-size: 14px;
             font-weight: 500;
-            color: var(--tg-hint);
+            color: #888;
             text-decoration: none;
         }
-
         .tab.active { color: var(--tg-button); font-weight: 700; }
     </style>
 </head>
@@ -219,33 +95,7 @@
     </header>
 
     <main>
-        <div id="find-screen" class="screen">
-            <button id="big-btn">Start Random Chat</button>
-        </div>
-
-        <div id="searching-screen" class="screen" style="display:none">
-            <h2>Finding someone to chat with...</h2>
-            <p>This usually takes just a few seconds</p>
-            <button id="cancel-btn">Cancel</button>
-        </div>
-
-        <div id="chat-screen">
-            <div id="chat-header">
-                <img id="partner-photo" src="">
-                <div id="partner-name"></div>
-                <button id="add-friend-btn">+</button>
-            </div>
-            <div id="messages"></div>
-            <div id="privacy-info">
-                Chats are completely private and end-to-end secure.<br>
-                No one else can read your messages.
-            </div>
-            <div id="input-area">
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button id="send-btn">→</button>
-                <button id="exit-btn">End Chat</button>
-            </div>
-        </div>
+        <button id="big-btn">Start Random Chat</button>
     </main>
 
     <footer>
@@ -263,14 +113,6 @@
         const user = tg.initDataUnsafe.user;
         const myTelegramId = user.id.toString();
 
-        let myProfile = null;
-        let currentRoomId = null;
-        let partnerId = null;
-        let isFriends = false;
-        let queueUnsubscribe = null;
-        let roomUnsubscribe = null;
-        let iAmInQueue = false;
-
         const firebaseConfig = {
           apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
           authDomain: "toolstr-f5308.firebaseapp.com",
@@ -286,69 +128,30 @@
         const queueRef = db.collection('queue');
         const myQueueDoc = queueRef.doc(myTelegramId);
 
+        let myProfile = null;
+
         tg.CloudStorage.getItem('profile', (err, saved) => {
             if (!saved) return tg.close();
             myProfile = JSON.parse(saved);
-
             document.getElementById('my-nickname').textContent = myProfile.nickname;
             document.getElementById('my-photo').src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-
-            checkCurrentRoomOrQueue();
         });
 
-        function checkCurrentRoomOrQueue() {
-            tg.CloudStorage.getItem('currentRoom', (err, roomId) => {
-                if (roomId) {
-                    const roomRef = db.doc(`rooms/${roomId}`);
-                    roomRef.get().then(snap => {
-                        if (snap.exists) {
-                            const data = snap.data();
-                            partnerId = data.users.find(id => id !== myTelegramId);
-                            if (partnerId && data.profiles?.[partnerId]) {
-                                startChat(roomId, data.profiles[partnerId], partnerId, true);
-                            } else {
-                                tg.CloudStorage.removeItem('currentRoom');
-                            }
-                        } else {
-                            tg.CloudStorage.removeItem('currentRoom');
-                        }
-                    });
-                } else {
-                    // Check if I am in queue (after refresh)
-                    myQueueDoc.get().then(snap => {
-                        if (snap.exists) {
-                            enterSearchingMode(true);
-                        }
-                    });
-                }
+        document.getElementById('big-btn').onclick = () => {
+            myQueueDoc.set({
+                profile: myProfile,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-        }
 
-        function enterSearchingMode(fromRefresh = false) {
-            iAmInQueue = true;
-            document.getElementById('find-screen').style.display = 'none';
-            document.getElementById('searching-screen').style.display = 'flex';
-
-            if (!fromRefresh) {
-                myQueueDoc.set({
-                    profile: myProfile,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-
-            // Yeni gelen biri varsa ANINDA eşleş
-            queueUnsubscribe = queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                if (!iAmInQueue) return;
-
-                for (let doc of snapshot.docs) {
+            const unsub = queueRef.orderBy('timestamp', 'asc').onSnapshot(snap => {
+                for (let doc of snap.docs) {
                     if (doc.id !== myTelegramId) {
-                        partnerId = doc.id;
+                        const partnerId = doc.id;
                         const partnerProfile = doc.data().profile;
 
-                        currentRoomId = [myTelegramId, partnerId].sort((a,b) => a.localeCompare(b)).join('_');
-                        const roomRef = db.doc(`rooms/${currentRoomId}`);
+                        const roomId = [myTelegramId, partnerId].sort().join('_');
 
-                        roomRef.set({
+                        db.doc(`rooms/${roomId}`).set({
                             users: [myTelegramId, partnerId],
                             profiles: { [myTelegramId]: myProfile, [partnerId]: partnerProfile },
                             messages: [],
@@ -356,149 +159,17 @@
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
-                        // İkisini de queue'den sil
                         myQueueDoc.delete();
                         queueRef.doc(partnerId).delete();
+                        unsub();
 
-                        iAmInQueue = false;
-                        if (queueUnsubscribe) queueUnsubscribe();
-
-                        startChat(currentRoomId, partnerProfile, partnerId);
+                        // EŞLEŞİNCE SPECIAL'E GİT
+                        location.href = `/special?room=\( {roomId}&partner= \){partnerId}`;
                         return;
                     }
                 }
             });
-        }
-
-        document.getElementById('big-btn').onclick = () => enterSearchingMode();
-
-        document.getElementById('cancel-btn').onclick = () => {
-            iAmInQueue = false;
-            myQueueDoc.delete();
-            if (queueUnsubscribe) queueUnsubscribe();
-            document.getElementById('searching-screen').style.display = 'none';
-            document.getElementById('find-screen').style.display = 'flex';
         };
-
-        function startChat(roomId, partnerProfile, pId, resume = false) {
-            currentRoomId = roomId;
-            partnerId = pId;
-
-            tg.CloudStorage.setItem('currentRoom', roomId);
-
-            document.getElementById('partner-photo').src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-            document.getElementById('partner-name').textContent = partnerProfile.nickname;
-
-            document.getElementById('chat-screen').style.display = 'flex';
-
-            const roomRef = db.doc(`rooms/${roomId}`);
-            const messagesDiv = document.getElementById('messages');
-
-            roomUnsubscribe = roomRef.onSnapshot(snap => {
-                if (!snap.exists) {
-                    endChat();
-                    return;
-                }
-                const data = snap.data();
-
-                const req = data.friendRequests || {};
-                const iRequested = !!req[myTelegramId];
-                const heRequested = !!req[partnerId];
-
-                if (iRequested && heRequested) {
-                    isFriends = true;
-                    document.getElementById('add-friend-btn').textContent = '✓';
-                    document.getElementById('add-friend-btn').disabled = true;
-                    if (!resume) tg.showPopup({message: 'You are now friends!'});
-                } else if (iRequested) {
-                    document.getElementById('add-friend-btn').textContent = '✔';
-                } else if (heRequested) {
-                    document.getElementById('add-friend-btn').textContent = '?';
-                } else {
-                    document.getElementById('add-friend-btn').textContent = '+';
-                }
-
-                const messages = data.messages || [];
-                messagesDiv.innerHTML = '';
-                let lastDate = '';
-
-                messages.forEach(msg => {
-                    const msgDate = msg.timestamp ? msg.timestamp.toDate() : new Date();
-                    const dateStr = msgDate.toLocaleDateString();
-
-                    if (dateStr !== lastDate) {
-                        const sep = document.createElement('div');
-                        sep.className = 'date-separator';
-                        sep.textContent = dateStr;
-                        messagesDiv.appendChild(sep);
-                        lastDate = dateStr;
-                    }
-
-                    const bubble = document.createElement('div');
-                    bubble.className = `message ${msg.sender === myTelegramId ? 'mine' : 'other'}`;
-                    bubble.textContent = msg.text;
-
-                    const time = document.createElement('div');
-                    time.className = 'message-time';
-                    time.textContent = msgDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-                    bubble.appendChild(time);
-
-                    messagesDiv.appendChild(bubble);
-                });
-
-                if (messages.length > 0) document.getElementById('privacy-info').hidden = true;
-
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-        }
-
-        document.getElementById('add-friend-btn').onclick = () => {
-            if (isFriends || !currentRoomId) return;
-            db.doc(`rooms/${currentRoomId}`).update({
-                [`friendRequests.${myTelegramId}`]: true
-            });
-        };
-
-        document.getElementById('send-btn').onclick = sendMessage;
-        document.getElementById('message-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text || !currentRoomId) return;
-
-            db.doc(`rooms/${currentRoomId}`).update({
-                messages: firebase.firestore.FieldValue.arrayUnion({
-                    text,
-                    sender: myTelegramId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                })
-            });
-
-            input.value = '';
-        }
-
-        document.getElementById('exit-btn').onclick = endChat;
-
-        function endChat() {
-            iAmInQueue = false;
-            if (queueUnsubscribe) queueUnsubscribe();
-            if (roomUnsubscribe) roomUnsubscribe();
-
-            if (currentRoomId && !isFriends) {
-                db.doc(`rooms/${currentRoomId}`).delete().catch(() => {});
-            }
-
-            tg.CloudStorage.removeItem('currentRoom');
-
-            currentRoomId = null;
-            partnerId = null;
-            isFriends = false;
-
-            document.getElementById('chat-screen').style.display = 'none';
-            document.getElementById('find-screen').style.display = 'flex';
-            document.getElementById('privacy-info').hidden = false;
-        }
     </script>
 </body>
 </html>
