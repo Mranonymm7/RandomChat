@@ -1,7 +1,8 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!-- special.html -->
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Chatle — Chat</title>
 
@@ -10,49 +11,56 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <style>
-  :root{--bg:#040617;--sec:#0f1724;--text:#edf4ff;--muted:#97a6b8;--accent:#1ea7ff}
+  :root{--bg:#051020;--panel:#0d1624;--muted:#99b3c7;--text:#eaf6ff;--accent:#1ea7ff;--danger:#ff4b4b}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
-  header{padding:18px;background:var(--sec);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.04);position:relative}
-  .back{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:20px;cursor:pointer;color:var(--muted)}
-  .partner{display:flex;gap:14px;align-items:center;margin:0 auto}
-  .photo{width:72px;height:72px;border-radius:50%;border:3px solid var(--accent);object-fit:cover}
-  .pinfo{display:flex;flex-direction:column}
-  .pname{font-weight:800;font-size:18px}
-  .pdetails{color:var(--muted);font-size:13px}
-  .addbtn{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:var(--text);font-size:20px;cursor:pointer}
-  #messages{flex:1;padding:18px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg, transparent, rgba(255,255,255,0.01))}
-  .message{max-width:78%;padding:12px 14px;border-radius:16px;line-height:1.4}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  header{padding:14px 16px;background:var(--panel);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .profile{display:flex;align-items:center;gap:12px}
+  .photo{width:64px;height:64px;border-radius:50%;border:3px solid var(--accent);object-fit:cover}
+  .meta{display:flex;flex-direction:column}
+  .name{font-weight:800;font-size:18px}
+  .details{color:var(--muted);font-size:13px}
+  .bio{color:var(--muted);font-size:13px;margin-top:6px}
+  main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  #messages{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:78%;padding:12px 14px;border-radius:14px;line-height:1.45}
   .mine{align-self:flex-end;background:linear-gradient(90deg,var(--accent),#0098f0)}
-  .other{align-self:flex-start;background:#111318}
-  .time{font-size:11px;color:var(--muted);margin-top:6px;text-align:right}
-  .inputbar{display:flex;gap:10px;padding:12px;background:var(--sec);border-top:1px solid rgba(255,255,255,0.03);align-items:center}
-  .txt{flex:1;padding:12px;border-radius:14px;background:#0b1117;border:1px solid rgba(255,255,255,0.02);color:var(--text)}
-  .send{background:var(--accent);color:white;border:none;padding:10px 14px;border-radius:12px;cursor:pointer}
-  .endbtn{background:#ff4b4b;color:white;border:none;padding:8px 12px;border-radius:12px;margin-left:6px;cursor:pointer}
+  .other{align-self:flex-start;background:#0b1117}
+  .time{font-size:11px;color:var(--muted);margin-top:8px;text-align:right}
+  .controls{display:flex;gap:10px;padding:12px;background:var(--panel);border-top:1px solid rgba(255,255,255,0.03);align-items:center}
+  .input{flex:1;padding:12px;border-radius:12px;background:#06101a;border:1px solid rgba(255,255,255,0.02);color:var(--text)}
+  .send{background:var(--accent);color:white;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
+  .end-wrap{padding:14px;background:transparent}
+  .end-btn{width:100%;padding:14px;border-radius:16px;background:var(--danger);color:white;border:none;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(255,80,80,0.18)}
+  .friend-btn{position:absolute;right:18px;top:18px;background:rgba(255,255,255,0.04);border:none;color:var(--text);padding:8px 10px;border-radius:10px}
 </style>
 </head>
 <body>
 <header>
-  <div class="back" onclick="history.back()">←</div>
-  <div class="partner">
+  <div class="profile">
     <img id="partner-photo" class="photo" src="">
-    <div class="pinfo">
-      <div id="partner-name" class="pname"></div>
-      <div id="partner-details" class="pdetails"></div>
-      <div id="partner-bio" class="pdetails" style="opacity:0.85;margin-top:6px"></div>
+    <div class="meta">
+      <div id="partner-name" class="name"></div>
+      <div id="partner-details" class="details"></div>
+      <div id="partner-bio" class="bio"></div>
     </div>
   </div>
-  <button id="add-btn" class="addbtn">+</button>
+  <button id="friend-btn" class="friend-btn">+</button>
 </header>
 
-<div id="messages"></div>
+<main>
+  <div id="messages"></div>
 
-<div class="inputbar">
-  <input id="message-input" class="txt" placeholder="Mesaj yaz..." autocomplete="off" />
-  <button id="send-btn" class="send">Gönder</button>
-  <button id="end-btn" class="endbtn">Sohbeti Bitir</button>
-</div>
+  <div class="controls">
+    <input id="message-input" class="input" placeholder="Type a message..." autocomplete="off" />
+    <button id="send-btn" class="send">Send</button>
+  </div>
+
+  <div class="end-wrap">
+    <!-- large bottom end button that looks like bot button -->
+    <button id="end-btn" class="end-btn">End Chat</button>
+  </div>
+</main>
 
 <script>
 Telegram.WebApp.ready();
@@ -60,16 +68,7 @@ Telegram.WebApp.expand();
 
 const tg = Telegram.WebApp;
 
-const params = new URLSearchParams(location.search);
-const roomId = params.get('room');
-const partnerId = params.get('partner');
-
-if (!roomId || !partnerId) {
-  tg.showPopup({message:"Oda bilgisi eksik"}); 
-  console.error("Eksik param", roomId, partnerId);
-}
-
-// -- FIREBASE --
+// FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
   authDomain: "toolstr-f5308.firebaseapp.com",
@@ -81,31 +80,38 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const roomRef = db.doc(`rooms/${roomId}`);
 
+const params = new URLSearchParams(location.search);
+const roomId = params.get('room');
+const partnerId = params.get('partner');
+
+if (!roomId || !partnerId) {
+  tg.showPopup({message:"Missing room or partner parameter"});
+  console.error("Missing room/partner", roomId, partnerId);
+}
+
+const roomRef = db.doc(`rooms/${roomId}`);
 const myId = Telegram.WebApp.initDataUnsafe?.user?.id?.toString();
 
 let myProfile = null;
 tg.CloudStorage.getItem('profile', (err, saved) => {
-  if (err || !saved) {
-    tg.showPopup({message:"Profil yüklenemedi"});
-  } else {
+  if (saved) {
     try { myProfile = JSON.parse(saved); } catch(e){ myProfile = null; }
   }
 });
 
-// DOM
+// UI refs
 const pPhoto = document.getElementById('partner-photo');
 const pName = document.getElementById('partner-name');
 const pDetails = document.getElementById('partner-details');
 const pBio = document.getElementById('partner-bio');
+const friendBtn = document.getElementById('friend-btn');
 const messagesDiv = document.getElementById('messages');
-const addBtn = document.getElementById('add-btn');
-const sendBtn = document.getElementById('send-btn');
 const input = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
 const endBtn = document.getElementById('end-btn');
 
-function safeProfileObj(p){
+function safeP(p){
   if (!p) return {nickname:'User', photoUrl:'', age:null, gender:'', country:'', countryName:'', bio:''};
   return {
     nickname: p.nickname || 'User',
@@ -118,22 +124,21 @@ function safeProfileObj(p){
   };
 }
 
-function renderMessages(msgs){
+function renderMessages(list){
   messagesDiv.innerHTML = '';
   let lastDate = '';
-  (msgs||[]).forEach(m=>{
-    const d = m.timestamp ? (m.timestamp.toDate ? m.timestamp.toDate() : new Date(m.timestamp)) : new Date();
+  (list || []).forEach(m => {
+    const d = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate() : new Date();
     const dateStr = d.toLocaleDateString();
     if (dateStr !== lastDate) {
       const sep = document.createElement('div');
-      sep.style.textAlign='center'; sep.style.opacity='0.6'; sep.style.margin='10px 0'; sep.textContent = dateStr;
+      sep.style.textAlign='center'; sep.style.opacity='0.6'; sep.style.margin='8px 0'; sep.textContent = dateStr;
       messagesDiv.appendChild(sep);
       lastDate = dateStr;
     }
     const b = document.createElement('div');
-    b.className = 'message ' + (m.sender === myId ? 'mine' : 'other');
+    b.className = 'msg ' + (m.sender === myId ? 'mine' : 'other');
     b.textContent = m.text;
-
     const t = document.createElement('div');
     t.className = 'time';
     t.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -143,48 +148,51 @@ function renderMessages(msgs){
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Odayı dinle
-const unsubscribe = roomRef.onSnapshot(snap=>{
-  if (!snap.exists){
-    tg.showPopup({message:"Sohbet sonlandırıldı"});
-    location.href = "/chat.html";
+// Snapshot: listens to room changes and handles "end chat" for both participants
+const unsubscribe = roomRef.onSnapshot(snapshot => {
+  if (!snapshot.exists) {
+    // room deleted by server or cleanup -> exit both sides
+    tg.showPopup({message:"Chat ended"});
+    window.location.href = "/chat.html";
     return;
   }
-  const data = snap.data();
-  if (!data.active) {
-    tg.showPopup({message:"Chat ended by the other person"});
-    location.href = "/chat.html";
+  const data = snapshot.data();
+
+  // If room marked inactive, exit both sides
+  if (data.active === false) {
+    tg.showPopup({message:"Chat ended"});
+    window.location.href = "/chat.html";
     return;
   }
 
-  const partner = data.profiles?.[partnerId] || {};
-  const partnerSafe = safeProfileObj(partner);
+  // populate partner info (it might arrive a bit after creation; handle gracefully)
+  const partnerRaw = (data.profiles || {})[partnerId] || {};
+  const partner = safeP(partnerRaw);
+  pPhoto.src = partner.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+  pName.textContent = partner.nickname;
+  const genderSymbol = partner.gender === 'male' ? '♂' : partner.gender === 'female' ? '♀' : (partner.gender ? '⚧' : '');
+  pDetails.textContent = `${partner.age ? partner.age + ' • ' : ''}${genderSymbol} ${partner.countryName || partner.country || ''}`.trim();
+  pBio.textContent = partner.bio || '';
 
-  pPhoto.src = partnerSafe.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-  pName.textContent = partnerSafe.nickname;
-  pBio.textContent = partnerSafe.bio || '';
-  const genderSymbol = partnerSafe.gender === 'male' ? '♂' : partnerSafe.gender === 'female' ? '♀' : (partnerSafe.gender ? '⚧' : '');
-  pDetails.textContent = `${partnerSafe.age ? partnerSafe.age+' • ' : ''}${genderSymbol} ${partnerSafe.countryName || partnerSafe.country || ''}`.trim();
-
-  // friend button
+  // friend request ui
   const req = data.friendRequests || {};
-  if (req[myId] && req[partnerId]) { addBtn.textContent='✓'; addBtn.disabled=true; }
-  else if (req[myId]) { addBtn.textContent='✔'; }
-  else if (req[partnerId]) { addBtn.textContent='?'; tg.showPopup({message:"Friend request received!"}); }
-  else { addBtn.textContent='+'; addBtn.disabled=false; }
+  if (req[myId] && req[partnerId]) { friendBtn.textContent = '✓'; friendBtn.disabled = true; }
+  else if (req[myId]) { friendBtn.textContent = '✔'; }
+  else if (req[partnerId]) { friendBtn.textContent = '?'; tg.showPopup({message:"Friend request received"}); }
+  else { friendBtn.textContent = '+'; friendBtn.disabled = false; }
 
   // messages
   renderMessages(data.messages || []);
 }, err => {
-  console.error("Room snapshot error:", err);
-  tg.showPopup({message:"Bağlantı hatası"});
+  console.error("Room listener error:", err);
+  tg.showPopup({message:"Connection error"});
 });
 
-// Gönder
+// Send message (robust)
 async function sendMessage(){
   const text = input.value.trim();
   if (!text) return;
-  try{
+  try {
     await roomRef.update({
       messages: firebase.firestore.FieldValue.arrayUnion({
         text,
@@ -194,41 +202,47 @@ async function sendMessage(){
     });
     input.value = '';
   } catch(e){
-    console.error("send err", e);
-    tg.showPopup({message:"Mesaj gönderilemedi"});
+    console.error("Send failed:", e);
+    tg.showPopup({message:"Failed to send message"});
   }
 }
-
 sendBtn.addEventListener('click', sendMessage);
-input.addEventListener('keydown', e=>{ if (e.key === 'Enter') sendMessage(); });
+input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
 
 // Friend request
-addBtn.addEventListener('click', async ()=>{
-  try{
+friendBtn.addEventListener('click', async () => {
+  try {
     await roomRef.update({[`friendRequests.${myId}`]: true});
-    tg.showPopup({message:"Friend request sent!"});
+    tg.showPopup({message:"Friend request sent"});
   } catch(e){
-    console.error("friend req err", e);
-    tg.showPopup({message:"İstek gönderilemedi"});
+    console.error("Friend request failed", e);
+    tg.showPopup({message:"Failed to send friend request"});
   }
 });
 
-// End chat
-endBtn.addEventListener('click', async ()=>{
-  try{
-    await roomRef.update({active: false});
-    tg.showPopup({message:"Sohbet bitirildi"});
-    location.href = "/chat.html";
+// End chat: set active:false (both clients listen and will redirect). We await the update before redirecting locally.
+endBtn.addEventListener('click', async () => {
+  if (!confirm("End this chat for both sides?")) return;
+  try {
+    await roomRef.update({
+      active: false,
+      endedBy: myId,
+      endedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // After update, snapshot listener will handle redirect for both clients.
+    // In case snapshot takes time, redirect local user too:
+    tg.showPopup({message:"Chat ended"});
+    window.location.href = "/chat.html";
   } catch(e){
-    console.error("end err", e);
-    tg.showPopup({message:"Sohbet bitirilemedi"});
+    console.error("End chat failed:", e);
+    tg.showPopup({message:"Failed to end chat"});
   }
 });
 
-// sayfadan çıkarken temizleme
-window.addEventListener('beforeunload', ()=> {
+// cleanup
+window.addEventListener('beforeunload', () => {
   if (typeof unsubscribe === 'function') unsubscribe();
 });
 </script>
 </body>
-</html>
+  </html>
