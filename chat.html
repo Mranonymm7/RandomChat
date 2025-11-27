@@ -1,205 +1,234 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatle</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root {
-            --tg-bg: var(--tg-theme-bg-color, #000000);
-            --tg-secondary: var(--tg-theme-secondary-bg-color, #111111);
-            --tg-text: var(--tg-theme-text-color, #ffffff);
-            --tg-button: var(--tg-theme-button-color, #0088cc);
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background: var(--tg-bg);
-            color: var(--tg-text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        header {
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #00d4ff, #3366ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-        .user-info img {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: 2.5px solid var(--tg-button);
-        }
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-            gap: 30px;
-        }
-        #big-btn {
-            background: linear-gradient(135deg, var(--tg-button), #00aaff);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 26px 90px;
-            font-size: 22px;
-            font-weight: 800;
-            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.45);
-            cursor: pointer;
-        }
-        #searching-text {
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-        }
-        #cancel-btn {
-            background: none;
-            border: 1.5px solid #666;
-            color: #aaa;
-            padding: 16px 40px;
-            border-radius: 24px;
-            font-size: 17px;
-        }
-        footer {
-            display: flex;
-            background: var(--tg-secondary);
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        .tab {
-            flex: 1;
-            padding: 18px 0;
-            text-align: center;
-            font-weight: 500;
-            color: #888;
-            text-decoration: none;
-        }
-        .tab.active { color: var(--tg-button); font-weight: 700; }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chatle — Random Chat</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root {
+    --bg:#0b1020; --sec:#0f1724; --text:#e6eef8; --muted:#aab6c8; --accent:#1ea7ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter, system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .logo{font-weight:800;font-size:22px;background:linear-gradient(90deg,#7de0ff,#5a8bff);-webkit-background-clip:text;color:transparent}
+  .user{display:flex;gap:10px;align-items:center}
+  .avatar{width:44px;height:44px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+  .panel{width:100%;max-width:760px;background:var(--sec);border-radius:14px;padding:34px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+  h1{font-size:20px;margin-bottom:8px}
+  p.sub{color:var(--muted);margin-bottom:22px}
+  button#start{background:linear-gradient(90deg,var(--accent),#0084ff);color:white;border:none;padding:18px 56px;border-radius:30px;font-weight:800;font-size:18px;cursor:pointer}
+  button#start[disabled]{opacity:0.5;cursor:not-allowed}
+  #searching{display:none;margin-top:18px}
+  .small{color:var(--muted);font-size:14px}
+  footer{display:flex;background:var(--sec);border-top:1px solid rgba(255,255,255,0.04)}
+  .tab{flex:1;padding:14px;text-align:center;color:var(--muted)}
+  .tab.active{color:var(--accent);font-weight:700}
+</style>
 </head>
 <body>
-    <header>
-        <div class="logo">Chatle</div>
-        <div class="user-info">
-            <img id="my-photo" src="">
-            <div id="my-nickname"></div>
-        </div>
-    </header>
+<header>
+  <div class="logo">Chatle</div>
+  <div class="user">
+    <img id="my-photo" class="avatar" src="">
+    <div id="my-nick" style="font-weight:700"></div>
+  </div>
+</header>
 
-    <main>
-        <div id="start-screen">
-            <button id="big-btn">Start Random Chat</button>
-        </div>
+<main>
+  <div class="panel">
+    <h1>Rastgele Sohbete Başla</h1>
+    <p class="sub">Gerçek kullanıcılarla anında eşleş. Gizlilik — uçtan uca değil ama bu demo için mesajlar yalnızca odada tutulur.</p>
 
-        <div id="searching-screen" style="display:none">
-            <div id="searching-text">Finding someone to chat with...<br><span style="font-size:16px;opacity:0.7;margin-top:12px;display:block">This usually takes just a few seconds</span></div>
-            <button id="cancel-btn">Cancel</button>
-        </div>
-    </main>
+    <button id="start" disabled>Yükleniyor...</button>
 
-    <footer>
-        <a href="/chat" class="tab active">Home</a>
-        <a href="/chats.html" class="tab">Chats</a>
-        <a href="/profile.html" class="tab">Profile</a>
-        <a href="/suggestions.html" class="tab">Discover</a>
-    </footer>
+    <div id="searching" style="margin-top:18px">
+      <div class="small" id="searching-text">Kullanıcı aranıyor…</div>
+      <div style="margin-top:14px">
+        <button id="cancel" style="background:none;border:1px solid rgba(255,255,255,0.08);color:var(--muted);padding:10px 20px;border-radius:12px;cursor:pointer">İptal</button>
+      </div>
+    </div>
+  </div>
+</main>
 
-    <script>
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
+<footer>
+  <div class="tab active">Home</div>
+  <div class="tab">Chats</div>
+  <div class="tab">Profile</div>
+  <div class="tab">Discover</div>
+</footer>
 
-        const tg = Telegram.WebApp;
-        const myId = tg.initDataUnsafe.user.id.toString();
+<script>
+Telegram.WebApp.ready();
+Telegram.WebApp.expand();
 
-        const firebaseConfig = {
-          apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
-          authDomain: "toolstr-f5308.firebaseapp.com",
-          projectId: "toolstr-f5308",
-          storageBucket: "toolstr-f5308.firebasestorage.app",
-          messagingSenderId: "649384447951",
-          appId: "1:649384447951:web:aede43e92b95a8aafbccba",
-          measurementId: "G-58QST4E6R3"
-        };
+const tg = Telegram.WebApp;
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const queueRef = db.collection('queue');
-        const myQueueDoc = queueRef.doc(myId);
+// -- FIREBASE CONFIG (sizin mevcut config) --
+const firebaseConfig = {
+  apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
+  authDomain: "toolstr-f5308.firebaseapp.com",
+  projectId: "toolstr-f5308",
+  storageBucket: "toolstr-f5308.firebasestorage.app",
+  messagingSenderId: "649384447951",
+  appId: "1:649384447951:web:aede43e92b95a8aafbccba",
+  measurementId: "G-58QST4E6R3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-        let myProfile = null;
-        let unsub = null;
+const startBtn = document.getElementById('start');
+const cancelBtn = document.getElementById('cancel');
+const searchingDiv = document.getElementById('searching');
+const searchingText = document.getElementById('searching-text');
+const myPhoto = document.getElementById('my-photo');
+const myNick = document.getElementById('my-nick');
 
-        tg.CloudStorage.getItem('profile', (err, saved) => {
-            if (!saved) return tg.close();
-            myProfile = JSON.parse(saved);
-            document.getElementById('my-nickname').textContent = myProfile.nickname;
-            document.getElementById('my-photo').src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
-        });
+const initUser = tg.initDataUnsafe?.user;
+if (!initUser) {
+  console.error("Telegram user verisi yok");
+  tg.showPopup({message: "Kullanıcı alınamadı. Yeniden açmayı dene."});
+}
 
-        document.getElementById('big-btn').onclick = () => {
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('searching-screen').style.display = 'flex';
+const myId = initUser?.id?.toString();
 
-            myQueueDoc.set({
-                profile: myProfile,
-                ts: firebase.firestore.FieldValue.serverTimestamp()
-            });
+let myProfile = null;
+let queueUnsub = null;
+let inQueue = false;
+const queueRef = db.collection('queue');
+const roomsRef = db.collection('rooms');
+const myQueueDoc = queueRef.doc(myId);
 
-            unsub = queueRef.orderBy('ts', 'asc').onSnapshot(snap => {
-                for (let doc of snap.docs) {
-                    if (doc.id !== myId) {
-                        const partnerId = doc.id;
-                        const partnerProfile = doc.data().profile;
+// yükleniyor: profile CloudStorage'tan al
+tg.CloudStorage.getItem('profile', (err, saved) => {
+  if (err) { console.warn(err); tg.showPopup({message:"Profil alınırken hata"}); return; }
+  if (!saved) {
+    tg.showPopup({message:"Profil bulunamadı. Lütfen profilini kaydet."});
+    startBtn.textContent = "Profil yok";
+    startBtn.disabled = true;
+    return;
+  }
 
-                        const roomId = [myId, partnerId].sort().join('_');
+  try {
+    myProfile = JSON.parse(saved);
+  } catch(e){ myProfile = null; }
 
-                        db.doc(`rooms/${roomId}`).set({
-                            users: [myId, partnerId],
-                            profiles: { [myId]: myProfile, [partnerId]: partnerProfile },
-                            messages: [],
-                            friendRequests: {},
-                            active: true,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
+  if (!myProfile) {
+    tg.showPopup({message:"Profil verisi bozuk."});
+    startBtn.textContent = "Profil yok";
+    startBtn.disabled = true;
+    return;
+  }
 
-                        myQueueDoc.delete();
-                        queueRef.doc(partnerId).delete();
+  // UI güncelle
+  myNick.textContent = myProfile.nickname || (initUser?.first_name || "Kullanıcı");
+  myPhoto.src = myProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+  startBtn.textContent = "Start Random Chat";
+  startBtn.disabled = false;
+});
 
-                        unsub();
-                        location.href = `/special?room=\( {roomId}&partner= \){partnerId}`;
-                        return;
-                    }
-                }
-            });
-        };
+// yardımcı: güvenli profil objesi (eksik alan varsa boş bırak)
+function makeProfileObj(p){
+  return {
+    nickname: p.nickname || (initUser?.first_name || "User"),
+    photoUrl: p.photoUrl || "",
+    age: p.age || null,
+    gender: p.gender || "",
+    country: p.country || "",
+    countryName: p.countryName || "",
+    bio: p.bio || ""
+  };
+}
 
-        document.getElementById('cancel-btn').onclick = () => {
-            myQueueDoc.delete();
-            if (unsub) unsub();
-            document.getElementById('searching-screen').style.display = 'none';
-            document.getElementById('start-screen').style.display = 'block';
-        };
-    </script>
+// eşleşme başlat
+async function enterQueue(){
+  if (!myProfile) { tg.showPopup({message:"Profil henüz hazır değil"}); return; }
+  inQueue = true;
+  startBtn.style.display = 'none';
+  searchingDiv.style.display = 'block';
+  searchingText.textContent = "Kullanıcı aranıyor…";
+
+  const payload = {
+    profile: makeProfileObj(myProfile),
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await myQueueDoc.set(payload);
+  } catch(e){
+    console.error("Queue set hatası:", e);
+    tg.showPopup({message:"Sıraya eklenirken hata"});
+    inQueue = false;
+    startBtn.style.display = 'inline-block';
+    searchingDiv.style.display = 'none';
+    return;
+  }
+
+  // Snapshot ile sırayı dinle
+  queueUnsub = queueRef.orderBy('ts','asc').onSnapshot(async snap => {
+    if (!inQueue) return;
+    // console.log("QUEUE SNAP", snap.docs.map(d=>d.id));
+    for (let doc of snap.docs){
+      if (doc.id === myId) continue;
+      // bulundu! partner var
+      const partnerId = doc.id;
+      const partnerProfile = doc.data().profile || {};
+      const roomId = [myId, partnerId].sort((a,b)=>a.localeCompare(b)).join('_');
+
+      const roomDoc = roomsRef.doc(roomId);
+
+      // Güvenli biçimde oda oluştur
+      try {
+        await roomDoc.set({
+          users: [myId, partnerId],
+          profiles: {
+            [myId]: makeProfileObj(myProfile),
+            [partnerId]: makeProfileObj(partnerProfile)
+          },
+          messages: [],
+          friendRequests: {},
+          active: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch(e){
+        console.error("Room set hatası:", e);
+      }
+
+      // temizle
+      try { await myQueueDoc.delete(); } catch(e){ console.warn("myQueueDoc.delete()", e); }
+      try { await queueRef.doc(partnerId).delete(); } catch(e){ /* ignore */ }
+
+      // stop listening ve yönlendir
+      if (queueUnsub) queueUnsub();
+      inQueue = false;
+
+      // güvenli url encode
+      const url = `/special.html?room=${encodeURIComponent(roomId)}&partner=${encodeURIComponent(partnerId)}`;
+      window.location.href = url;
+      return;
+    }
+  }, err => {
+    console.error("Queue snapshot error:", err);
+  });
+}
+
+startBtn.addEventListener('click', () => {
+  enterQueue();
+});
+
+cancelBtn.addEventListener('click', async () => {
+  inQueue = false;
+  if (queueUnsub) queueUnsub();
+  try { await myQueueDoc.delete(); } catch(e){ /* ignore */ }
+  startBtn.style.display = 'inline-block';
+  searchingDiv.style.display = 'none';
+});
+</script>
 </body>
     </html>
