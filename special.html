@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat • Chatle</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #000000);
+            --tg-secondary: var(--tg-theme-secondary-bg-color, #111111);
+            --tg-text: var(--tg-theme-text-color, #ffffff);
+            --tg-button: var(--tg-theme-button-color, #0088cc);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--tg-bg);
+            color: var(--tg-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 16px 20px;
+            background: var(--tg-secondary);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        header img {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 3px solid var(--tg-button);
+        }
+        header .info { flex: 1; }
+        header .name { font-weight: 600; font-size: 19px; }
+        header .status { font-size: 14px; opacity: 0.7; }
+        #add-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: none;
+            font-size: 26px;
+            color: white;
+            cursor: pointer;
+        }
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .message {
+            max-width: 78%;
+            padding: 14px 18px;
+            border-radius: 22px;
+            line-height: 1.45;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+        }
+        .message.mine {
+            align-self: flex-end;
+            background: var(--tg-button);
+            border-bottom-right-radius: 6px;
+        }
+        .message.other {
+            align-self: flex-start;
+            background: #222;
+            border-bottom-left-radius: 6px;
+        }
+        .time {
+            font-size: 11.5px;
+            opacity: 0.7;
+            margin-top: 6px;
+            text-align: right;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body>
+    <header>
+        <img id="partner-photo" src="">
+        <div class="info">
+            <div class="name" id="partner-name"></div>
+            <div class="status">online</div>
+        </div>
+        <button id="add-btn">+</button>
+    </header>
+
+    <div id="messages"></div>
+
+    <script>
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.MainButton.text = "End Chat";
+        Telegram.WebApp.MainButton.color = "#ff4444";
+        Telegram.WebApp.MainButton.show();
+        Telegram.WebApp.MainButton.onClick(() => location.href = "/chat");
+
+        const urlParams = new URLSearchParams(location.search);
+        const roomId = urlParams.get('room');
+        const partnerId = urlParams.get('partner');
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
+          authDomain: "toolstr-f5308.firebaseapp.com",
+          projectId: "toolstr-f5308",
+          storageBucket: "toolstr-f5308.firebasestorage.app",
+          messagingSenderId: "649384447951",
+          appId: "1:649384447951:web:aede43e92b95a8aafbccba",
+          measurementId: "G-58QST4E6R3"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const roomRef = db.doc(`rooms/${roomId}`);
+
+        Telegram.WebApp.CloudStorage.getItem('profile', (err, saved) => {
+            const myProfile = JSON.parse(saved);
+            const myId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+
+            roomRef.onSnapshot(snap => {
+                const data = snap.data();
+                const partnerProfile = data.profiles[partnerId];
+
+                document.getElementById('partner-photo').src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+                document.getElementById('partner-name').textContent = partnerProfile.nickname;
+
+                const req = data.friendRequests || {};
+                if (req[myId] && req[partnerId]) {
+                    document.getElementById('add-btn').textContent = '✓';
+                    document.getElementById('add-btn').disabled = true;
+                } else if (req[myId]) {
+                    document.getElementById('add-btn').textContent = '✔';
+                } else if (req[partnerId]) {
+                    document.getElementById('add-btn').textContent = '?';
+                }
+
+                const msgs = data.messages || [];
+                const div = document.getElementById('messages');
+                div.innerHTML = '';
+
+                let lastDate = '';
+                msgs.forEach(m => {
+                    const date = m.timestamp?.toDate() || new Date();
+                    const dateStr = date.toLocaleDateString();
+                    if (dateStr !== lastDate) {
+                        const sep = document.createElement('div');
+                        sep.style.textAlign = 'center';
+                        sep.style.opacity = '0.6';
+                        sep.style.fontSize = '13px';
+                        sep.style.margin = '20px 0';
+                        sep.textContent = dateStr;
+                        div.appendChild(sep);
+                        lastDate = dateStr;
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `message ${m.sender === myId ? 'mine' : 'other'}`;
+                    bubble.textContent = m.text;
+
+                    const time = document.createElement('div');
+                    time.className = 'time';
+                    time.textContent = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    bubble.appendChild(time);
+
+                    div.appendChild(bubble);
+                });
+                div.scrollTop = div.scrollHeight;
+            });
+        });
+
+        document.getElementById('add-btn').onclick = () => {
+            roomRef.update({[`friendRequests.${Telegram.WebApp.initDataUnsafe.user.id}`]: true});
+        };
+    </script>
+</body>
+</html>
