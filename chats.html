@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chatle — Chats</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --bg:#071226; --panel:#0c1724; --muted:#9fb3c6; --text:#eaf6ff; --accent:#1ea7ff; --danger:#ff4b4b;
+    --footer-height:76px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--footer-height) + 12px);}
+
+  header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:space-between}
+  .brand{font-weight:800;font-size:20px;background:linear-gradient(90deg,#7de0ff,#5a8bff);-webkit-background-clip:text;color:transparent}
+  .user{display:flex;align-items:center;gap:10px}
+  .avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+
+  main{flex:1;padding:18px 16px 90px;overflow:auto}
+
+  .panel{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  .tabs{display:flex;gap:10px;margin-bottom:6px}
+  .top-tab{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.02);color:var(--muted);cursor:pointer;font-weight:700}
+  .top-tab.active{background:linear-gradient(90deg,var(--accent),#0084ff);color:white;box-shadow:0 8px 24px rgba(30,167,255,0.08)}
+
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);cursor:pointer}
+  .item:hover{transform:translateY(-2px);transition:transform .12s}
+  .item .photo{width:56px;height:56px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+  .meta{flex:1;display:flex;flex-direction:column}
+  .meta .title{font-weight:800}
+  .meta .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .badge{font-size:12px;color:var(--muted);padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.02)}
+
+  .empty{padding:18px;border-radius:12px;background:rgba(255,255,255,0.02);text-align:center;color:var(--muted)}
+
+  /* modal for read-only conversation */
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999;padding:18px}
+  .modal{width:100%;max-width:820px;height:80vh;background:var(--panel);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+  .modal-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:12px}
+  .modal-body{flex:1;padding:12px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .modal-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.03);display:flex;justify-content:flex-end;gap:8px}
+
+  .bubble{max-width:78%;padding:10px 12px;border-radius:12px;line-height:1.4}
+  .mine{align-self:flex-end;background:linear-gradient(90deg,var(--accent),#0098f0)}
+  .other{align-self:flex-start;background:#0b1117}
+
+  /* footer nav */
+  footer{position:fixed;left:0;right:0;bottom:0;height:var(--footer-height);display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.02));border-top:1px solid rgba(255,255,255,0.03);z-index:9998}
+  .nav{width:100%;max-width:980px;display:flex;gap:8px;padding:12px;justify-content:space-between}
+  .tab{flex:1;padding:10px 6px;border-radius:12px;text-align:center;color:var(--muted);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .tab.active{color:white;background:linear-gradient(90deg,var(--accent),#0084ff);box-shadow:0 6px 18px rgba(30,167,255,0.12)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Chatle</div>
+  <div class="user">
+    <img id="myAvatar" class="avatar" src="">
+    <div id="myName" style="font-weight:700"></div>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:18px;font-weight:800">Chats</div>
+      <div style="color:var(--muted)">Friends & recent conversations</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <div id="tabFriends" class="top-tab active" role="tab">Friends</div>
+      <div id="tabRecent" class="top-tab" role="tab">Recent</div>
+    </div>
+
+    <div id="friendsList" class="list" aria-live="polite"></div>
+    <div id="recentList" class="list" aria-live="polite" style="display:none"></div>
+
+    <div id="loading" class="empty">Loading...</div>
+  </section>
+</main>
+
+<!-- Read-only modal -->
+<div id="modalBack" class="modal-back" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <img id="modalPhoto" src="" style="width:48px;height:48px;border-radius:50%;border:2px solid var(--accent);object-fit:cover">
+      <div style="display:flex;flex-direction:column">
+        <div id="modalName" style="font-weight:800"></div>
+        <div id="modalInfo" style="color:var(--muted);font-size:13px"></div>
+      </div>
+      <div style="flex:1"></div>
+      <button id="modalClose" style="background:transparent;border:none;color:var(--muted);cursor:pointer">Close</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div class="modal-footer">
+      <button id="modalOk" class="tab" style="min-width:120px">Back</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="nav" role="navigation">
+    <div id="navHome" class="tab" data-href="/chat.html">Home</div>
+    <div id="navChats" class="tab active" data-href="/chats.html">Chats</div>
+    <div id="navProfile" class="tab" data-href="/profile.html">Profile</div>
+    <div id="navDiscover" class="tab" data-href="/discover.html">Discover</div>
+  </div>
+</footer>
+
+<script>
+Telegram.WebApp.ready();
+Telegram.WebApp.expand();
+
+const tg = Telegram.WebApp;
+const initUser = tg.initDataUnsafe?.user || {};
+const myId = initUser?.id?.toString();
+
+// Firebase config (your project)
+const firebaseConfig = {
+  apiKey: "AIzaSyCy2MOVaKyAiwZfiG93BWh1nTKZcnkMKOs",
+  authDomain: "toolstr-f5308.firebaseapp.com",
+  projectId: "toolstr-f5308",
+  storageBucket: "toolstr-f5308.firebasestorage.app",
+  messagingSenderId: "649384447951",
+  appId: "1:649384447951:web:aede43e92b95a8aafbccba",
+  measurementId: "G-58QST4E6R3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const myAvatar = document.getElementById('myAvatar');
+const myName = document.getElementById('myName');
+const friendsList = document.getElementById('friendsList');
+const recentList = document.getElementById('recentList');
+const loadingEl = document.getElementById('loading');
+
+const tabFriends = document.getElementById('tabFriends');
+const tabRecent = document.getElementById('tabRecent');
+
+const modalBack = document.getElementById('modalBack');
+const modalPhoto = document.getElementById('modalPhoto');
+const modalName = document.getElementById('modalName');
+const modalInfo = document.getElementById('modalInfo');
+const modalBody = document.getElementById('modalBody');
+const modalClose = document.getElementById('modalClose');
+const modalOk = document.getElementById('modalOk');
+
+const navHome = document.getElementById('navHome');
+const navChats = document.getElementById('navChats');
+const navProfile = document.getElementById('navProfile');
+const navDiscover = document.getElementById('navDiscover');
+
+// basic UI setup
+myAvatar.src = initUser.photo_url || initUser.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+myName.textContent = initUser.first_name || initUser.username || 'You';
+
+// navigation handlers
+function navigateTo(href, el){
+  setActiveNav(el);
+  try { window.location.href = href; } catch(e){ tg.showPopup({message:"Navigation failed"}); }
+}
+function setActiveNav(activeEl){
+  [navHome, navChats, navProfile, navDiscover].forEach(el => el.classList.toggle('active', el === activeEl));
+}
+navHome.addEventListener('click', ()=> navigateTo('/chat.html', navHome));
+navChats.addEventListener('click', ()=> navigateTo('/chats.html', navChats));
+navProfile.addEventListener('click', ()=> navigateTo('/profile.html', navProfile));
+navDiscover.addEventListener('click', ()=> navigateTo('/discover.html', navDiscover));
+
+// top tabs
+tabFriends.addEventListener('click', ()=> { tabFriends.classList.add('active'); tabRecent.classList.remove('active'); friendsList.style.display='flex'; recentList.style.display='none'; });
+tabRecent.addEventListener('click', ()=> { tabRecent.classList.add('active'); tabFriends.classList.remove('active'); recentList.style.display='flex'; friendsList.style.display='none'; });
+
+// helper safe profile
+function safeProfile(p){
+  if (!p) return { nickname:"User", photoUrl:"", age:null, gender:'', country:'', countryName:'', bio:'' };
+  return {
+    nickname: p.nickname || "User",
+    photoUrl: p.photoUrl || '',
+    age: p.age || null,
+    gender: p.gender || '',
+    country: p.country || '',
+    countryName: p.countryName || '',
+    bio: p.bio || ''
+  };
+}
+
+// fetch rooms that include me
+async function loadRooms(){
+  loadingEl.style.display = 'block';
+  friendsList.innerHTML = '';
+  recentList.innerHTML = '';
+
+  try {
+    const roomsSnap = await db.collection('rooms').where('users', 'array-contains', myId).get();
+    if (roomsSnap.empty) {
+      loadingEl.textContent = 'No conversations yet.';
+      return;
+    }
+    const friendItems = [];
+    const recentItems = [];
+
+    // For each room, fetch partner, friend status and last message
+    const promises = roomsSnap.docs.map(async doc => {
+      const room = doc.data();
+      const roomId = doc.id;
+      const partnerId = (room.users || []).find(u => u !== myId);
+      const partnerProfile = safeProfile((room.profiles || {})[partnerId] || {});
+      const friendReqs = room.friendRequests || {};
+
+      // determine friend status: both requested each other
+      const amFriend = !!(friendReqs[myId] && friendReqs[partnerId]);
+
+      // get last message (if any)
+      let lastMsg = null;
+      try {
+        const lastSnap = await db.collection(`rooms/${roomId}/messages`)
+          .orderBy('timestamp','desc').limit(1).get();
+        if (!lastSnap.empty) {
+          const mdoc = lastSnap.docs[0];
+          lastMsg = mdoc.data();
+        }
+      } catch(e) {
+        console.warn("Failed to fetch last message for", roomId, e);
+      }
+
+      return { roomId, partnerId, partnerProfile, amFriend, lastMsg };
+    });
+
+    const results = await Promise.all(promises);
+
+    results.sort((a,b) => {
+      const ta = a.lastMsg?.timestamp?.toMillis ? a.lastMsg.timestamp.toMillis() : 0;
+      const tb = b.lastMsg?.timestamp?.toMillis ? b.lastMsg.timestamp.toMillis() : 0;
+      return tb - ta;
+    });
+
+    results.forEach(item => {
+      const title = item.partnerProfile.nickname || 'User';
+      const subtitle = item.lastMsg ? (item.lastMsg.text.length > 80 ? item.lastMsg.text.slice(0,80)+'…' : item.lastMsg.text) : 'No messages yet';
+      const time = item.lastMsg && item.lastMsg.timestamp && item.lastMsg.timestamp.toDate ? item.lastMsg.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = `
+        <img class="photo" src="${item.partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png'}" alt="p">
+        <div class="meta">
+          <div class="title">${escapeHtml(title)}</div>
+          <div class="sub">${escapeHtml(subtitle)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div class="badge">${time}</div>
+          <div style="font-size:12px;color:var(--muted)">${item.amFriend ? 'Friend' : 'Recent'}</div>
+        </div>
+      `;
+
+      el.addEventListener('click', () => {
+        if (item.amFriend) {
+          // open full chat
+          const url = `/special.html?room=${encodeURIComponent(item.roomId)}&partner=${encodeURIComponent(item.partnerId)}`;
+          window.location.href = url;
+        } else {
+          // open read-only modal showing full message history
+          openReadOnlyModal(item.roomId, item.partnerId, item.partnerProfile);
+        }
+      });
+
+      if (item.amFriend) friendItems.push(el);
+      else recentItems.push(el);
+    });
+
+    if (friendItems.length === 0) {
+      friendsList.innerHTML = `<div class="empty">No friends yet.</div>`;
+    } else {
+      friendItems.forEach(e => friendsList.appendChild(e));
+    }
+
+    if (recentItems.length === 0) {
+      recentList.innerHTML = `<div class="empty">No recent non-friend conversations.</div>`;
+    } else {
+      recentItems.forEach(e => recentList.appendChild(e));
+    }
+
+    loadingEl.style.display = 'none';
+  } catch (e) {
+    console.error("loadRooms failed", e);
+    loadingEl.textContent = 'Failed to load chats';
+  }
+}
+
+// escapeHtml helper
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Read-only modal: load messages subcollection and render (no send)
+let modalUnsub = null;
+async function openReadOnlyModal(roomId, partnerId, partnerProfile){
+  modalBack.style.display = 'flex';
+  modalBack.setAttribute('aria-hidden','false');
+  modalPhoto.src = partnerProfile.photoUrl || 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f60a.png';
+  modalName.textContent = partnerProfile.nickname || 'User';
+  modalInfo.textContent = (partnerProfile.countryName || partnerProfile.country) ? `${partnerProfile.countryName || partnerProfile.country}` : '';
+
+  modalBody.innerHTML = `<div style="color:var(--muted);padding:18px;text-align:center">Loading messages…</div>`;
+
+  // Unsubscribe previous
+  if (modalUnsub) { try { modalUnsub(); } catch(e){} modalUnsub = null; }
+
+  try {
+    modalUnsub = db.collection(`rooms/${roomId}/messages`).orderBy('timestamp','asc')
+      .onSnapshot(snap => {
+        modalBody.innerHTML = '';
+        if (snap.empty) {
+          modalBody.innerHTML = `<div class="empty">No messages.</div>`;
+          return;
+        }
+        snap.docs.forEach(doc => {
+          const m = doc.data();
+          const ts = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate() : new Date();
+          const bubble = document.createElement('div');
+          bubble.className = 'bubble ' + (m.sender === myId ? 'mine' : 'other');
+          bubble.textContent = m.text || '';
+          const t = document.createElement('div');
+          t.style.fontSize='11px'; t.style.color='var(--muted)'; t.style.marginTop='6px'; t.style.textAlign='right';
+          t.textContent = ts.toLocaleString([], {hour:'2-digit', minute:'2-digit', year:'numeric', month:'short', day:'numeric'});
+          bubble.appendChild(t);
+          modalBody.appendChild(bubble);
+        });
+        modalBody.scrollTop = modalBody.scrollHeight;
+      }, err => {
+        console.error("modal messages err", err);
+        modalBody.innerHTML = `<div class="empty">Failed to load messages</div>`;
+      });
+  } catch(e){
+    console.error("openReadOnlyModal error", e);
+    modalBody.innerHTML = `<div class="empty">Failed to load messages</div>`;
+  }
+}
+
+// close modal
+function closeModal(){
+  modalBack.style.display = 'none';
+  modalBack.setAttribute('aria-hidden','true');
+  if (modalUnsub) { try { modalUnsub(); } catch(e){} modalUnsub = null; }
+}
+modalClose.addEventListener('click', closeModal);
+modalOk.addEventListener('click', closeModal);
+modalBack.addEventListener('click', (e) => { if (e.target === modalBack) closeModal(); });
+
+// initial load
+loadRooms();
+
+// refresh periodically (optional) - a single call now is fine; user can reload to refresh
+// setInterval(loadRooms, 30_000);
+
+// allow keyboard navigation for accessibility
+[tabFriends, tabRecent].forEach(el => el.setAttribute('tabindex','0'));
+[tabFriends, tabRecent].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') el.click(); }));
+
+// make sure nav tabs are clickable
+[navHome, navChats, navProfile, navDiscover].forEach(el => {
+  el.addEventListener('click', () => {
+    const href = el.getAttribute('data-href');
+    try { window.location.href = href; } catch(e) { tg.showPopup({message:'Navigation failed'}); }
+  });
+});
+
+// debug
+console.log("chats.html loaded for", myId);
+</script>
+</body>
+</html>
