@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ToolsTR - Namaz Vakitleri</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Global Reset ve Temel Ayarlar */
+        * { box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
+        body { background:#000; color:#fff; font-family:'Inter',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+        
+        /* Header */
+        header { display:flex; justify-content:center; align-items:center; padding:15px 20px; background:rgba(20,20,20,0.9); backdrop-filter: blur(10px); border-bottom:1px solid rgba(255,255,255,0.1); position:sticky; top:0; z-index:100; height:60px; }
+        .brand { font-weight:800; font-size:1.1rem; letter-spacing:-0.5px; background:linear-gradient(45deg,#fff,#aaa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        
+        /* Ana İçerik Konteyneri */
+        .container { padding:25px 20px; flex:1; max-width:500px; margin:0 auto; width:100%; }
+        
+        /* Giriş Formu Tasarımı (Tek Kutu ve Altındaki Buton) */
+        #searchForm { margin-bottom: 25px; }
+        #cityInput { 
+            width: 100%; 
+            padding:15px 18px; 
+            border-radius:12px; 
+            background:#1a1a1a; 
+            border:2px solid #333; 
+            color:#fff; 
+            font-size:1rem; 
+            font-weight: 600;
+            outline:none; 
+            transition: border-color 0.3s;
+        }
+        #cityInput:focus { border-color: #4D96FF; }
+
+        /* Sorgula Butonu (Tam Genişlik) */
+        #fetchBtn { 
+            width: 100%; 
+            margin-top: 15px; /* Kutu ile aralık */
+            padding:15px; 
+            border-radius:12px; 
+            border:none; 
+            background:#4D96FF; 
+            color:#fff; 
+            font-weight:800; 
+            font-size: 1.1rem;
+            cursor:pointer; 
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(77, 150, 255, 0.3);
+        }
+        #fetchBtn:active { background: #3a7fd9; box-shadow: none; }
+
+        /* Durum ve Hata Mesajları */
+        #loading, #status, #error { 
+            text-align:center; 
+            padding:15px; 
+            color:#bbb; 
+            font-style:italic; 
+            display:none; 
+            border-radius: 8px;
+            background: #111;
+            margin-bottom: 15px;
+        }
+        #error { color: #FF6B6B; background: #221a1a; font-style: normal; }
+
+        /* Vakit Tablosu */
+        .prayer-table { 
+            background:#1a1a1a; 
+            border-radius:15px; 
+            overflow:hidden; 
+            margin-top:20px; 
+            box-shadow:0 6px 20px rgba(0,0,0,0.5); 
+            display:none; 
+        }
+        .table-header { 
+            background:linear-gradient(90deg, #222, #333); 
+            padding:18px; 
+            text-align:center; 
+            font-weight:800; 
+            font-size: 1.2rem;
+            color: #4D96FF;
+        }
+        .table-header small { 
+            display:block; 
+            color:#bdbdbd; 
+            font-weight:500; 
+            margin-top:8px; 
+            font-size: 0.85rem;
+        }
+        .prayer-row { 
+            display:flex; 
+            justify-content:space-between; 
+            align-items:center; 
+            padding:15px 20px; 
+            border-bottom:1px solid #222; 
+            transition: background 0.2s;
+        }
+        .prayer-row:last-child { border-bottom:none; }
+        .prayer-name { 
+            color:#cfcfcf; 
+            font-weight:600; 
+            display:flex; 
+            gap:10px; 
+            align-items:center; 
+            font-size: 1.05rem;
+        }
+        .prayer-time { 
+            font-weight:800; 
+            font-size:1.2rem; 
+            color:#fff; 
+        }
+        
+        /* Aktif Vakit Vurgusu */
+        .prayer-row.active { 
+            background:#2a2a2a; 
+            border-left:5px solid #4D96FF; 
+            padding-left:15px; 
+        }
+        .prayer-row.active .prayer-name { color:#4D96FF; }
+        .prayer-row.active .prayer-time { color:#4D96FF; }
+
+        @media (max-width:480px) { 
+            .prayer-time { font-size:1.1rem; } 
+            .brand { font-size:1rem; } 
+        }
+    </style>
+</head>
+<body>
+<header><div class="brand">ToolsTR - Namaz Vakitleri</div></header>
+<div class="container">
+    <form id="searchForm">
+        <input id="cityInput" class="text-input" placeholder="Şehir adı girin (örn: Istanbul veya Paris)" required />
+        <button type="submit" id="fetchBtn"><i class="fa-solid fa-magnifying-glass"></i> Sorgula</button>
+    </form>
+
+    <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</div>
+    <div id="status">Lütfen yukarıya şehir adını girerek sorgulayın.</div>
+    <div id="error"></div>
+
+    <div class="prayer-table" id="prayerTable">
+        <div class="table-header">
+            <div id="headerCity">Şehir Adı</div>
+            <small id="headerDate">Tarih</small>
+        </div>
+        <div id="prayerTimes"></div>
+    </div>
+</div>
+
+<script>
+    // --- Telegram Web App Entegrasyonu ---
+    const tg = window.Telegram?.WebApp;
+    try { 
+        if (tg) { 
+            tg.expand(); 
+            tg.setHeaderColor('#000000'); 
+            tg.setBackgroundColor('#000000'); 
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => window.location.href = 'index.html');
+        } 
+    } catch(e){}
+
+    // --- DOM Elemanları ---
+    const searchForm = document.getElementById('searchForm');
+    const cityInput = document.getElementById('cityInput');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const loadingEl = document.getElementById('loading');
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const prayerTable = document.getElementById('prayerTable');
+    const headerCity = document.getElementById('headerCity');
+    const headerDate = document.getElementById('headerDate');
+    const prayerTimesEl = document.getElementById('prayerTimes');
+
+    // --- Durum Yönetimi ---
+    function showLoading(msg){ loadingEl.style.display='block'; loadingEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${msg}`; statusEl.style.display='none'; errorEl.style.display='none'; prayerTable.style.display='none'; }
+    function showStatus(msg){ statusEl.style.display='block'; statusEl.innerText = msg; loadingEl.style.display='none'; errorEl.style.display='none'; }
+    function showError(msg){ errorEl.style.display='block'; errorEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${msg}`; loadingEl.style.display='none'; statusEl.style.display='none'; prayerTable.style.display='none'; try{ if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); }catch(e){} }
+
+    // --- Yardımcı Fonksiyonlar ---
+    
+    // API'den gelen İngilizce/Arapça isimleri Türkçe'ye çevir ve birleştir
+    function mapKeysToTurkish(obj){
+        return {
+            Imsak: obj.Fajr || obj.Imsak || '--',
+            Gunes: obj.Sunrise || obj.Sunrise || '--',
+            Ogle: obj.Dhuhr || obj.Dhuhr || '--',
+            Ikindi: obj.Asr || obj.Asr || '--',
+            Aksam: obj.Maghrib || obj.Maghrib || '--',
+            Yatsi: obj.Isha || obj.Isha || '--'
+        };
+    }
+
+    // Saati dakikaya çevir
+    function parseTimeToMinutes(timeStr) {
+        const [h,m] = (timeStr || '00:00').split(':').map(s=>parseInt(s,10)||0);
+        return h*60 + m;
+    }
+
+    // Belirtilen saat dilimine göre şimdiki zamanı dakika cinsinden al
+    function getNowMinutesInTimezone(timezone) {
+        try {
+            const date = new Date();
+            const timeOptions = { hour:'2-digit', minute:'2-digit', hour12:false, timeZone: timezone };
+            const timeString = new Intl.DateTimeFormat('en-US', timeOptions).format(date);
+            const [h, m] = timeString.split(':').map(Number);
+            return h*60 + m;
+        } catch(e) {
+            // Hata olursa varsayılan sistem saatini kullan
+            const d = new Date();
+            return d.getHours()*60 + d.getMinutes();
+        }
+    }
+
+    // Sıradaki (aktif) namaz vaktini bul
+    function findNextPrayerIndex(timesObj, timezone) {
+        const order = ['Imsak','Gunes','Ogle','Ikindi','Aksam','Yatsi'];
+        const nowMin = getNowMinutesInTimezone(timezone);
+        
+        for (let i=0;i<order.length;i++){
+            const t = parseTimeToMinutes(timesObj[order[i]]);
+            if (nowMin < t) return i; // Sıradaki vakit bulundu
+        }
+        
+        // Eğer tüm vakitler geçtiyse (gece yarısından sonra), sıradaki vakit İmsak'tır.
+        return 0;
+    }
+
+    // İkonları eşleştir
+    function getIconForPrayer(key){
+        const icons = { Imsak:'fa-solid fa-cloud-moon', Gunes:'fa-solid fa-sun', Ogle:'fa-solid fa-sun-plant-wilt', Ikindi:'fa-solid fa-cloud-sun', Aksam:'fa-solid fa-moon', Yatsi:'fa-solid fa-star' };
+        return icons[key] || 'fa-solid fa-clock';
+    }
+
+    // --- Render İşlemleri ---
+    function renderTimes(timings, meta) {
+        const times = mapKeysToTurkish(timings);
+        
+        // Timezone bilgisi yoksa varsayılanı kullan
+        const tz = meta && meta.timezone ? meta.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Header güncellemeleri
+        headerCity.innerText = meta && meta.city ? meta.city : (meta.timezone || 'Bilinmeyen Konum');
+        headerDate.innerText = meta && meta.date && meta.date.readable ? meta.date.readable : new Date().toLocaleDateString('tr-TR');
+        
+        prayerTimesEl.innerHTML = '';
+        const nextIdx = findNextPrayerIndex(times, tz);
+        const order = ['Imsak','Gunes','Ogle','Ikindi','Aksam','Yatsi'];
+        
+        for (let i=0;i<order.length;i++){
+            const key = order[i];
+            const row = document.createElement('div');
+            row.className = 'prayer-row' + (i === nextIdx ? ' active' : '');
+            row.innerHTML = `<div class="prayer-name"><i class="${getIconForPrayer(key)}"></i> ${key}</div><div class="prayer-time">${times[key]}</div>`;
+            prayerTimesEl.appendChild(row);
+        }
+        
+        prayerTable.style.display = 'block';
+        loadingEl.style.display = 'none';
+        statusEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        try{ if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); }catch(e){}
+    }
+
+    // --- API Çağrısı ---
+    async function fetchByCity(city) {
+        showLoading(`${city} için vakitler alınıyor...`);
+        try {
+            const c = encodeURIComponent(city);
+            // Varsayılan hesaplama metodu 2 (ISNA) olarak ayarlandı. 
+            // Ülke filtresi kaldırıldı, API coğrafi olarak en uygun şehri bulacaktır.
+            const url = `https://api.aladhan.com/v1/timingsByCity?city=${c}&method=2`; 
+            
+            const res = await fetch(url);
+            if (!res.ok) {
+                const txt = await res.text().catch(()=>res.statusText);
+                throw new Error(txt || ('Durum: ' + res.status));
+            }
+            const json = await res.json();
+            
+            if (!json || json.code !== 200 || !json.data) throw new Error('Vakit verisi bulunamadı. Şehir adını kontrol edin.');
+            
+            const timings = json.data.timings;
+            const meta = {
+                timezone: json.data.meta.timezone || '',
+                date: json.data.date,
+                city: json.data.meta.latitude ? `${city} (${json.data.meta.timezone.split('/').pop().replace('_', ' ')})` : city
+            };
+            
+            renderTimes(timings, meta);
+        } catch (err) {
+            showError('Vakit alınamadı. Şehir adı yanlış olabilir veya API erişim sorunu var. Hata: ' + (err && err.message ? err.message : String(err)));
+            console.error('Pray fetch error:', err);
+        }
+    }
+
+    // --- Olay Dinleyicisi ---
+    searchForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const city = cityInput.value.trim();
+        if (!city) { showError('Lütfen bir şehir adı girin.'); return; }
+        fetchByCity(city);
+        cityInput.blur();
+    });
+
+    // --- Başlangıç Durumu ---
+    (function init(){
+        headerCity.innerText = 'Şehir Adı';
+        headerDate.innerText = 'Tarih';
+        showStatus('Lütfen yukarıya şehir adını girerek sorgulayın.');
+    })();
+</script>
+</body>
+</html>
