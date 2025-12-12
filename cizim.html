@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - Çizim</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+        
+        header { display: flex; justify-content: center; align-items: center; padding: 15px 20px; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 100; height: 60px; }
+        .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; background: linear-gradient(45deg, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .container { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 0 20px 20px 20px; display: flex; flex-direction: column; position: relative; }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #888;
+        }
+        .empty-state h2 { font-size: 1.5rem; margin-bottom: 10px; color: #ccc; }
+        .empty-state p { font-size: 0.9rem; }
+        .empty-state i { font-size: 3rem; margin-bottom: 20px; color: #4D96FF; }
+
+        .drawing-board {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; 
+            flex-direction: column;
+            background-color: #000;
+            padding: 0 20px; 
+        }
+        
+        .canvas-area {
+            width: 100%;
+            flex-shrink: 0;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            background-color: #111;
+        }
+
+        #drawingCanvas {
+            background-color: #fff;
+            touch-action: none;
+        }
+
+        #fabBtn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #4D96FF;
+            color: #fff;
+            border: none;
+            font-size: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s, background-color 0.2s;
+            z-index: 200;
+        }
+        #fabBtn:active { transform: scale(0.95); }
+        .fab-closed { transform: rotate(0deg); }
+        .fab-open { background-color: #FF4D4D; transform: rotate(45deg); }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            margin-bottom: 10px; 
+            flex-shrink: 0; 
+        }
+
+        .tool-options { display: flex; gap: 10px; }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: #222;
+            color: #ccc;
+            border: 2px solid transparent;
+            font-size: 1.1rem;
+            transition: background 0.2s, border-color 0.2s, transform 0.1s;
+        }
+
+        .control-btn.active {
+            background-color: #4CAF50;
+            color: #fff;
+            border-color: #4CAF50;
+        }
+        
+        .control-btn:active { transform: scale(0.95); }
+
+        .color-picker-wrapper { position: relative; cursor: pointer; width: 45px; height: 45px; }
+        .color-picker-wrapper input[type="color"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .color-display {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid #ccc;
+            margin: 2px auto 0;
+            transition: border-color 0.2s;
+        }
+
+        .size-undo { display: flex; align-items: center; gap: 15px; }
+
+        #sizeSlider {
+            width: 80px;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #444;
+            border-radius: 5px;
+        }
+        #sizeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #4D96FF;
+            cursor: pointer;
+        }
+        
+        #undoBtn:disabled { opacity: 0.5; cursor: default; }
+
+        .bottom-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding-bottom: 10px; 
+            flex-shrink: 0; 
+        }
+        .bottom-actions button {
+            flex: 1; 
+            background-color: #333;
+            color: #fff;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: background 0.2s;
+            font-size: 1rem;
+        }
+        .bottom-actions button#clearBtn { background-color: #FF4D4D; }
+        .bottom-actions button#saveBtnActual { background-color: #4D96FF; }
+
+        .bottom-actions button:active { background-color: #555; }
+        .bottom-actions button#clearBtn:active { background-color: #ff7d7d; }
+        .bottom-actions button#saveBtnActual:active { background-color: #79acfa; }
+        
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">ToolsTR - Çizim Tahtası</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="empty-state" id="emptyState">
+            <i class="fa-solid fa-note-sticky"></i>
+            <h2>Yeni Çizim Başlat</h2>
+            <p>Başlamak için sağ alttaki artı (+) butonuna dokunun.</p>
+        </div>
+
+        <div class="drawing-board" id="drawingBoard">
+            
+            <div class="canvas-area" id="canvasAreaWrapper">
+                <canvas id="drawingCanvas"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="tool-options">
+                    <button id="penTool" class="control-btn active"><i class="fa-solid fa-pen"></i></button>
+                    <button id="eraserTool" class="control-btn"><i class="fa-solid fa-eraser"></i></button>
+                    
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="colorPicker" value="#4D96FF">
+                        <div id="colorDisplay" class="color-display" style="background-color: #4D96FF; border-color: #4D96FF;"></div>
+                    </div>
+                </div>
+
+                <div class="size-undo">
+                    <input type="range" id="sizeSlider" min="1" max="15" value="5">
+                    <button id="undoBtn" class="control-btn" title="Geri Al" disabled><i class="fa-solid fa-rotate-left"></i></button>
+                </div>
+            </div>
+
+            <div class="bottom-actions">
+                <button id="clearBtn"><i class="fa-solid fa-trash-can"></i> Temizle</button>
+                <button id="saveBtnActual"><i class="fa-solid fa-save"></i> Kaydet / Yükle</button>
+            </div>
+
+        </div>
+        
+    </div>
+    
+    <button id="fabBtn" class="fab-closed"><i class="fa-solid fa-plus"></i></button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        try { 
+            if (tg) { 
+                tg.expand(); 
+                tg.setHeaderColor('#000000'); 
+                tg.setBackgroundColor('#000000'); 
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => window.location.href = 'index.html');
+            } 
+        } catch(e){}
+
+        const emptyState = document.getElementById('emptyState');
+        const drawingBoard = document.getElementById('drawingBoard');
+        const fabBtn = document.getElementById('fabBtn');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const colorDisplay = document.getElementById('colorDisplay');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const penToolBtn = document.getElementById('penTool');
+        const eraserToolBtn = document.getElementById('eraserTool');
+        const undoBtn = document.getElementById('undoBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const saveBtnActual = document.getElementById('saveBtnActual');
+        const canvasAreaWrapper = document.getElementById('canvasAreaWrapper');
+
+        let isDrawing = false;
+        let isBoardOpen = false;
+        let lastX = 0;
+        let lastY = 0;
+        let brushColor = colorPicker.value;
+        let brushSize = parseInt(sizeSlider.value);
+        let tool = 'pen'; 
+        let history = [];
+        const HISTORY_LIMIT = 20;
+        const STORAGE_KEY = 'tools_tr_drawing_data';
+
+        function toggleDrawingBoard() {
+            isBoardOpen = !isBoardOpen;
+            
+            if (isBoardOpen) {
+                emptyState.style.display = 'none';
+                drawingBoard.style.display = 'flex';
+                fabBtn.classList.remove('fab-closed');
+                fabBtn.classList.add('fab-open');
+                setTimeout(() => {
+                    resizeCanvas();
+                    initializeDrawingBoard(true); 
+                }, 50); 
+            } else {
+                drawingBoard.style.display = 'none';
+                emptyState.style.display = 'flex';
+                fabBtn.classList.remove('fab-open');
+                fabBtn.classList.add('fab-closed');
+            }
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        fabBtn.addEventListener('click', toggleDrawingBoard);
+
+        function resizeCanvas() {
+            if (!isBoardOpen) return;
+            
+            const containerWidth = drawingBoard.clientWidth - 40;
+            const controlsHeight = document.querySelector('.controls').offsetHeight;
+            const actionsHeight = document.querySelector('.bottom-actions').offsetHeight;
+            const headerHeight = 60; 
+            const totalVerticalPadding = 20 * 2; 
+
+            const existingData = history.length > 0 ? history[history.length - 1] : null;
+
+            const availableHeight = window.innerHeight - headerHeight - controlsHeight - actionsHeight - totalVerticalPadding;
+            
+            const size = Math.min(containerWidth, availableHeight);
+
+            canvasAreaWrapper.style.height = `${size}px`;
+            
+            canvas.width = size;
+            canvas.height = size; 
+            
+            if (existingData) {
+                 const img = new Image();
+                 img.onload = function () {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    history = [canvas.toDataURL()]; 
+                    updateUndoButton();
+                 };
+                 img.src = existingData;
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                history = [];
+                updateUndoButton();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+             if (isBoardOpen) resizeCanvas();
+        });
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            
+            if (tool === 'pen') {
+                ctx.strokeStyle = brushColor;
+                ctx.lineWidth = brushSize;
+                ctx.globalCompositeOperation = 'source-over';
+            } else if (tool === 'eraser') {
+                ctx.strokeStyle = '#fff'; 
+                ctx.lineWidth = brushSize * 2; 
+                ctx.globalCompositeOperation = 'destination-out';
+            }
+            
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            [lastX, lastY] = [x, y];
+        }
+        
+        function saveState() {
+            if (history.length >= HISTORY_LIMIT) {
+                history.shift();
+            }
+            history.push(canvas.toDataURL());
+            localStorage.setItem(STORAGE_KEY + '_history', JSON.stringify(history));
+            updateUndoButton();
+        }
+        
+        function loadFromHistory() {
+            if (history.length > 0) {
+                const img = new Image();
+                img.onload = function () {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    updateUndoButton();
+                };
+                img.src = history[history.length - 1];
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                updateUndoButton();
+            }
+        }
+
+        function handleUndo() {
+            if (history.length > 1) {
+                history.pop();
+                loadFromHistory();
+            } else if (history.length === 1) {
+                history.pop();
+                loadFromHistory();
+            }
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function updateUndoButton() {
+            undoBtn.disabled = history.length === 0;
+            undoBtn.style.opacity = history.length === 0 ? 0.5 : 1;
+        }
+
+        function startDrawing(e) {
+            if (!isBoardOpen) return;
+            e.preventDefault(); 
+            isDrawing = true;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const rect = canvas.getBoundingClientRect();
+
+            [lastX, lastY] = [clientX - rect.left, clientY - rect.top];
+            
+            saveState(); 
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+        }
+
+        colorPicker.addEventListener('input', (e) => {
+            brushColor = e.target.value;
+            colorDisplay.style.backgroundColor = brushColor;
+            colorDisplay.style.borderColor = brushColor;
+            tool = 'pen';
+            penToolBtn.classList.add('active');
+            eraserToolBtn.classList.remove('active');
+        });
+
+        sizeSlider.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+        });
+
+        penToolBtn.addEventListener('click', () => {
+            tool = 'pen';
+            penToolBtn.classList.add('active');
+            eraserToolBtn.classList.remove('active');
+        });
+
+        eraserToolBtn.addEventListener('click', () => {
+            tool = 'eraser';
+            eraserToolBtn.classList.add('active');
+            penToolBtn.classList.remove('active');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Tüm çizimi temizlemek istediğinizden emin misiniz?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                history = [];
+                saveState();
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            }
+        });
+
+        undoBtn.addEventListener('click', handleUndo);
+
+        saveBtnActual.addEventListener('click', () => {
+            const isSaving = saveBtnActual.textContent.includes('Kaydet');
+
+            if (isSaving && history.length > 0) {
+                const dataURL = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'tools_tr_cizim.png';
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                localStorage.setItem(STORAGE_KEY + '_last_image', dataURL);
+                alert('Çiziminiz PNG olarak indirildi ve tarayıcıya kaydedildi!');
+                saveBtnActual.innerHTML = '<i class="fa-solid fa-save"></i> Kaydet / Yükle';
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else if (!isSaving || (isSaving && history.length === 0)) {
+                 const savedDataURL = localStorage.getItem(STORAGE_KEY + '_last_image');
+                 if (savedDataURL) {
+                     const img = new Image();
+                     img.onload = function () {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        history = [savedDataURL]; 
+                        localStorage.setItem(STORAGE_KEY + '_history', JSON.stringify(history));
+                        alert('Kaydedilen çiziminiz yüklendi.');
+                        updateUndoButton();
+                     };
+                     img.src = savedDataURL;
+                 } else {
+                     alert('Kaydedilmiş bir çizim bulunamadı.');
+                 }
+            } 
+        });
+        
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function initializeDrawingBoard(isToggle = false) {
+             const savedHistoryJSON = localStorage.getItem(STORAGE_KEY + '_history');
+             const savedImage = localStorage.getItem(STORAGE_KEY + '_last_image');
+
+             if (savedHistoryJSON) {
+                 history = JSON.parse(savedHistoryJSON);
+             } else if (savedImage) {
+                 history = [savedImage];
+             }
+
+             if (isToggle) {
+                 loadFromHistory();
+             }
+             
+             if (savedImage) {
+                 saveBtnActual.innerHTML = '<i class="fa-solid fa-save"></i> Kaydet / Yükle';
+             } else {
+                 saveBtnActual.innerHTML = '<i class="fa-solid fa-save"></i> Kaydet';
+             }
+             
+             updateUndoButton();
+
+             ctx.fillStyle = '#fff';
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        initializeDrawingBoard();
+    </script>
+</body>
+  </html>
+  
