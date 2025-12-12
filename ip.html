@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - IP Sorgu</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Giriş ve Buton Alanı --- */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .ip-input {
+            flex-grow: 1;
+            padding: 15px;
+            background-color: #111;
+            border: 2px solid #222;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .ip-input:focus {
+            border-color: #fff;
+        }
+
+        .btn-main {
+            padding: 15px 20px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-main:active {
+            transform: scale(0.95);
+        }
+
+        /* --- Sonuç Kartı --- */
+        #result-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 25px;
+            display: none; 
+            flex-direction: column;
+            gap: 15px;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            padding: 8px 0;
+            border-bottom: 1px dashed #222;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item i {
+            color: #fff;
+            width: 25px;
+            text-align: center;
+        }
+
+        .result-label {
+            color: #888;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .result-value {
+            color: #ccc;
+            overflow-wrap: break-word; /* Uzun ISS isimleri için */
+            word-break: break-all;
+        }
+
+        /* --- Durum Mesajları --- */
+        #loading, #error-message {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-style: italic;
+        }
+        
+        #loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        .ip-info-text {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #111;
+            border: 1px solid #222;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="ip-info-text">
+            <i class="fa-solid fa-earth-americas"></i> Başlangıçta IP adresinizden otomatik konum ve ağ bilgileri bulunur. Farklı bir IP adresi girerek sorgulama yapabilirsiniz.
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="ipInput" class="ip-input" placeholder="IP Adresi Girin (Örn: 8.8.8.8)" pattern="^(\d{1,3}\.){3}\d{1,3}$" title="Geçerli bir IP adresi giriniz." autocomplete="off">
+            <button class="btn-main" id="searchBtn">
+                <i class="fa-solid fa-search"></i> Sorgula
+            </button>
+        </div>
+
+        <div id="loading" style="display: none;"><i class="fa-solid fa-spinner"></i> Bilgiler aranıyor...</div>
+        <div id="error-message" style="display: none;"></div>
+
+        <div id="result-card">
+            <div class="result-title" id="cardTitle"></div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-hashtag"></i> 
+                <span class="result-label">IP Adresi:</span> 
+                <span class="result-value" id="ipAddressResult">--</span>
+            </div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-city"></i> 
+                <span class="result-label">Konum:</span> 
+                <span class="result-value" id="locationResult">--</span>
+            </div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-flag"></i> 
+                <span class="result-label">Ülke/Bölge:</span> 
+                <span class="result-value" id="countryRegionResult">--</span>
+            </div>
+
+            <div class="result-item">
+                <i class="fa-solid fa-map-pin"></i> 
+                <span class="result-label">Koordinatlar:</span> 
+                <span class="result-value" id="coordsResult">--</span>
+            </div>
+
+            <div class="result-item">
+                <i class="fa-solid fa-server"></i> 
+                <span class="result-label">ISP:</span> 
+                <span class="result-value" id="ispResult">--</span>
+            </div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-building"></i> 
+                <span class="result-label">Organizasyon:</span> 
+                <span class="result-value" id="orgResult">--</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+
+        // --- Sabitler ---
+        // ip-api.com: city, regionName, country, lat, lon, isp, org, query alanlarını çeker
+        const IP_API_BASE_URL = 'http://ip-api.com/json/'; 
+        const API_FIELDS = 'status,message,country,countryCode,regionName,city,lat,lon,isp,org,query';
+
+        // --- DOM Elemanları ---
+        const ipInput = document.getElementById('ipInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error-message');
+        const resultCardEl = document.getElementById('result-card');
+        const cardTitleEl = document.getElementById('cardTitle');
+
+        // Sonuç alanları
+        const ipAddressResultEl = document.getElementById('ipAddressResult');
+        const locationResultEl = document.getElementById('locationResult');
+        const countryRegionResultEl = document.getElementById('countryRegionResult');
+        const coordsResultEl = document.getElementById('coordsResult');
+        const ispResultEl = document.getElementById('ispResult');
+        const orgResultEl = document.getElementById('orgResult');
+
+        // --- Durum Yönetimi ---
+        const setLoading = (show, message = null) => {
+            if (message) loadingEl.innerHTML = `<i class="fa-solid fa-spinner"></i> ${message}`;
+            loadingEl.style.display = show ? 'block' : 'none';
+            errorEl.style.display = 'none';
+            resultCardEl.style.display = 'none';
+            if (show && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        };
+
+        const showError = (message) => {
+            setLoading(false);
+            errorEl.innerText = `Hata: ${message}`;
+            errorEl.style.display = 'block';
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+        };
+
+        // --- IP Adresi Kontrolü (Basit Regex) ---
+        function isValidIP(ip) {
+            const regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!regex.test(ip)) return false;
+            
+            // 0-255 aralığını kontrol et
+            return ip.split('.').every(segment => {
+                const num = parseInt(segment);
+                return num >= 0 && num <= 255;
+            });
+        }
+        
+        // --- IP Sorgulama Fonksiyonu ---
+        async function findIPDetails(ip = '') {
+            setLoading(true, ip ? `${ip} için bilgiler aranıyor...` : `Kendi IP'niz otomatik aranıyor...`);
+            
+            // API URL'sini oluştur
+            const API_URL = `${IP_API_BASE_URL}${ip}?fields=${API_FIELDS}`;
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Servis bağlantı hatası.');
+                
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    // Geçersiz IP adresi veya API limitine takılma
+                    throw new Error(data.message || 'Sorgulama başarısız oldu.');
+                }
+                
+                // Sonuçları ekranda göster
+                displayResults(data);
+
+            } catch (error) {
+                showError(`Sorgulama hatası: ${error.message}. Lütfen IP adresini kontrol edin.`);
+                console.error('IP search error:', error);
+            }
+        }
+
+        // --- Sonuçları Ekrana Basma (Render) ---
+        function displayResults(data) {
+            setLoading(false);
+            resultCardEl.style.display = 'flex';
+            
+            // Başlık
+            cardTitleEl.innerText = `Sorgu Sonuçları`;
+
+            // Verileri bas
+            ipAddressResultEl.innerText = data.query || 'N/A';
+            locationResultEl.innerText = `${data.city || 'Bilinmiyor'}`;
+            countryRegionResultEl.innerText = `${data.country || 'Bilinmiyor'} (${data.regionName || 'N/A'})`;
+            coordsResultEl.innerText = `${data.lat ? data.lat.toFixed(4) : 'N/A'}, ${data.lon ? data.lon.toFixed(4) : 'N/A'}`;
+            ispResultEl.innerText = data.isp || 'N/A';
+            orgResultEl.innerText = data.org || 'N/A';
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+        
+        // --- Olay Dinleyicileri ---
+        
+        // Sorgula Butonu
+        searchBtn.addEventListener('click', () => {
+            const ip = ipInput.value.trim();
+            if (ip) {
+                if (isValidIP(ip)) {
+                    findIPDetails(ip);
+                    ipInput.blur(); // Klavyeyi kapat
+                } else {
+                    showError('Lütfen geçerli bir IPv4 adresi girin.');
+                }
+            } else {
+                 // Boşsa kendi IP'si için sorgula
+                 findIPDetails();
+                 ipInput.blur(); 
+            }
+        });
+        
+        // Enter tuşu ile sorgulama
+        ipInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchBtn.click();
+            }
+        });
+
+        // --- Uygulama Başlangıcı ---
+        // Uygulama açıldığında otomatik olarak kullanıcının IP adresini sorgula
+        findIPDetails();
+
+    </script>
+</body>
+</html>
