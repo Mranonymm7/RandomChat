@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - XOX Oyunu</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Durum ve Ayarlar --- */
+        .status-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+        
+        .status-message {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* --- Seviye Seçimi --- */
+        .level-select {
+            padding: 8px 15px;
+            background-color: #111;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            appearance: none; /* Varsayılan stili kaldır */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="12" width="12" viewBox="0 0 448 512" fill="%23FFFFFF"><path d="M201.4 342.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 294.7 86.6 157.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        /* --- XOX Tahtası --- */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            /* Maksimum genişliği, istatistiklerden daha az olacak şekilde ayarla */
+            max-width: 350px; 
+            margin: 0 auto 30px auto;
+            aspect-ratio: 1 / 1; /* Kare olmasını sağla */
+        }
+
+        .cell {
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            color: #fff;
+            user-select: none;
+            font-weight: 800;
+        }
+
+        .cell:not(.x):not(.o):hover {
+            background: #222;
+        }
+        
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .x {
+            color: #FF6F61; /* Kırmızımsı */
+        }
+
+        .o {
+            color: #4D96FF; /* Mavimsi */
+        }
+        
+        /* Kazanma animasyonu */
+        .win {
+            background-color: #38C760; /* Yeşil */
+            color: #000 !important;
+        }
+
+        /* --- İstatistikler Alanı --- */
+        .stats-section {
+            padding-top: 20px;
+            border-top: 1px solid #222;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .win-rate {
+            grid-column: span 2;
+            background: #1a1a1a;
+        }
+        
+        /* Reset Butonu */
+        #resetStatsBtn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        #resetStatsBtn:hover {
+            background-color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR - XOX</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="status-area">
+            <span class="status-message" id="statusMessage">Sıra sende (X)</span>
+            <select id="levelSelect" class="level-select">
+                <option value="0">Kolay</option>
+                <option value="1">Orta</option>
+                <option value="2">Zor (MiniMax)</option>
+            </select>
+        </div>
+
+        <div class="board" id="gameBoard">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        
+        <button class="btn-main" id="newGameBtn" style="display: none; width: 100%; margin-bottom: 20px;">
+            <i class="fa-solid fa-sync-alt"></i> Yeni Oyun Başlat
+        </button>
+
+        <div class="stats-section">
+            <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 10px;">Oyun İstatistikleri</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Kazanmalar (X)</div>
+                    <div class="stat-value" id="statWins">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Kaybetmeler (O)</div>
+                    <div class="stat-value" id="statLosses">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Berabereler</div>
+                    <div class="stat-value" id="statTies">0</div>
+                </div>
+                <div class="stat-card win-rate">
+                    <div class="stat-label">Kazanma Yüzdesi</div>
+                    <div class="stat-value" id="statWinRate">%0</div>
+                </div>
+            </div>
+            
+            <button id="resetStatsBtn">
+                İstatistikleri Sıfırla
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+        
+        // --- Sabitler ve Durumlar ---
+        const PLAYER = 'X';
+        const AI = 'O';
+        const STATS_KEY = 'xox_stats';
+
+        let board = Array(9).fill(null);
+        let isGameActive = true;
+        let difficulty = parseInt(localStorage.getItem('xox_difficulty') || '0'); // Varsayılan: Kolay
+        let stats = getStatsFromStorage();
+
+        // --- DOM Elemanları ---
+        const boardEl = document.getElementById('gameBoard');
+        const cells = document.querySelectorAll('.cell');
+        const statusMessageEl = document.getElementById('statusMessage');
+        const levelSelectEl = document.getElementById('levelSelect');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const resetStatsBtn = document.getElementById('resetStatsBtn');
+
+        // İstatistik DOM Elemanları
+        const statWinsEl = document.getElementById('statWins');
+        const statLossesEl = document.getElementById('statLosses');
+        const statTiesEl = document.getElementById('statTies');
+        const statWinRateEl = document.getElementById('statWinRate');
+
+        // --- İstatistik Yönetimi ---
+
+        function getStatsFromStorage() {
+            const stored = localStorage.getItem(STATS_KEY);
+            return stored ? JSON.parse(stored) : { wins: 0, losses: 0, ties: 0 };
+        }
+
+        function saveStatsToStorage() {
+            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        }
+
+        function calculateWinRate() {
+            const totalGames = stats.wins + stats.losses;
+            if (totalGames === 0) return 0;
+            return Math.round((stats.wins / totalGames) * 100);
+        }
+
+        function updateStatsDisplay() {
+            statWinsEl.innerText = stats.wins;
+            statLossesEl.innerText = stats.losses;
+            statTiesEl.innerText = stats.ties;
+            statWinRateEl.innerText = `%${calculateWinRate()}`;
+        }
+        
+        function handleResetStats() {
+            stats = { wins: 0, losses: 0, ties: 0 };
+            saveStatsToStorage();
+            updateStatsDisplay();
+            statusMessageEl.innerText = "İstatistikler sıfırlandı. Yeni oyun başlat!";
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+        }
+
+        // --- Oyun Mantığı ---
+
+        function checkWinner(currentBoard) {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Satırlar
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Sütunlar
+                [0, 4, 8], [2, 4, 6]             // Çaprazlar
+            ];
+
+            for (let i = 0; i < winConditions.length; i++) {
+                const [a, b, c] = winConditions[i];
+                if (currentBoard[a] && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
+                    return { winner: currentBoard[a], line: [a, b, c] };
+                }
+            }
+
+            // Berabere kontrolü
+            if (currentBoard.every(cell => cell !== null)) {
+                return { winner: 'TIE', line: [] };
+            }
+
+            return null; // Oyun devam ediyor
+        }
+        
+        function handleResult(result) {
+            isGameActive = false;
+            newGameBtn.style.display = 'block';
+
+            if (result.winner === PLAYER) {
+                statusMessageEl.innerText = "Tebrikler, Kazandın! 🎉";
+                stats.wins++;
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else if (result.winner === AI) {
+                statusMessageEl.innerText = "Kaybettin. Tekrar Dene. 🤖";
+                stats.losses++;
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            } else if (result.winner === 'TIE') {
+                statusMessageEl.innerText = "Berabere! 🤝";
+                stats.ties++;
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('impact');
+            }
+            
+            // Kazanma çizgisini vurgula
+            result.line.forEach(index => {
+                cells[index].classList.add('win');
+            });
+
+            saveStatsToStorage();
+            updateStatsDisplay();
+        }
+
+        function handleCellClick(index) {
+            if (!isGameActive || board[index] !== null) return;
+
+            // Oyuncu hamlesi (X)
+            board[index] = PLAYER;
+            cells[index].innerText = PLAYER;
+            cells[index].classList.add('x');
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+            let result = checkWinner(board);
+            if (result) {
+                handleResult(result);
+                return;
+            }
+
+            // Yapay zeka sırası
+            statusMessageEl.innerText = "Yapay Zeka düşünüyor...";
+            setTimeout(aiMove, 500); // 500ms bekleme ile gerçekçilik kat
+        }
+        
+        // --- Yapay Zeka (AI) Fonksiyonları ---
+        
+        function getAvailableMoves(currentBoard) {
+            return currentBoard
+                .map((val, index) => val === null ? index : null)
+                .filter(index => index !== null);
+        }
+
+        function aiMove() {
+            if (!isGameActive) return;
+
+            let move;
+            const availableMoves = getAvailableMoves(board);
+
+            if (difficulty === 0) { // Kolay: Rastgele
+                move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            } else if (difficulty === 1) { // Orta: Kazanma/Engelleme + Rastgele Köşe/Orta
+                move = findBestIntermediateMove(board);
+            } else { // Zor: MiniMax Algoritması
+                move = findBestMiniMaxMove(board);
+            }
+            
+            if (move !== undefined && move !== null) {
+                board[move] = AI;
+                cells[move].innerText = AI;
+                cells[move].classList.add('o');
+                
+                let result = checkWinner(board);
+                if (result) {
+                    handleResult(result);
+                } else {
+                    statusMessageEl.innerText = "Sıra sende (X)";
+                }
+            }
+        }
+        
+        // --- Orta Seviye (Kazanma/Engelleme) ---
+        function findBestIntermediateMove(currentBoard) {
+            const availableMoves = getAvailableMoves(currentBoard);
+            
+            // 1. Kazanma hamlesi var mı?
+            for (const move of availableMoves) {
+                const tempBoard = [...currentBoard];
+                tempBoard[move] = AI;
+                if (checkWinner(tempBoard)?.winner === AI) return move;
+            }
+
+            // 2. Oyuncuyu engelleme hamlesi var mı?
+            for (const move of availableMoves) {
+                const tempBoard = [...currentBoard];
+                tempBoard[move] = PLAYER;
+                if (checkWinner(tempBoard)?.winner === PLAYER) return move;
+            }
+            
+            // 3. Köşe veya Orta (Merkez) hamlesi tercih et
+            const corners = [0, 2, 6, 8];
+            const center = 4;
+            
+            if (availableMoves.includes(center)) return center;
+            
+            const cornerMoves = availableMoves.filter(move => corners.includes(move));
+            if (cornerMoves.length > 0) return cornerMoves[Math.floor(Math.random() * cornerMoves.length)];
+            
+            // 4. Rastgele hareket
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+
+
+        // --- Zor Seviye (MiniMax Algoritması) ---
+        
+        function minimax(newBoard, player) {
+            const availableMoves = getAvailableMoves(newBoard);
+            const result = checkWinner(newBoard);
+
+            if (result?.winner === PLAYER) return { score: -10 };
+            if (result?.winner === AI) return { score: 10 };
+            if (result?.winner === 'TIE') return { score: 0 };
+
+            let moves = [];
+            
+            for (let i = 0; i < availableMoves.length; i++) {
+                let move = {};
+                move.index = availableMoves[i];
+                newBoard[availableMoves[i]] = player;
+
+                if (player === AI) {
+                    let result = minimax(newBoard, PLAYER);
+                    move.score = result.score;
+                } else {
+                    let result = minimax(newBoard, AI);
+                    move.score = result.score;
+                }
+
+                newBoard[availableMoves[i]] = null; // Tahtayı geri al
+                moves.push(move);
+            }
+
+            let bestMove;
+            if (player === AI) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score > bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score < bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return moves[bestMove];
+        }
+
+        function findBestMiniMaxMove(currentBoard) {
+             const bestMove = minimax(currentBoard, AI);
+             return bestMove ? bestMove.index : getAvailableMoves(currentBoard)[0]; // Bir hareket her zaman olmalı
+        }
+
+
+        // --- Başlatma ve Sıfırlama ---
+
+        function startGame() {
+            board = Array(9).fill(null);
+            isGameActive = true;
+            statusMessageEl.innerText = "Sıra sende (X)";
+            newGameBtn.style.display = 'none';
+
+            cells.forEach(cell => {
+                cell.innerText = '';
+                cell.classList.remove('x', 'o', 'win');
+                cell.addEventListener('click', handleCellClickWrapper);
+            });
+            
+            // Ayarların güncel halini LocalStorage'a kaydet
+            localStorage.setItem('xox_difficulty', difficulty.toString());
+
+            // Yapay zeka ilk başlayacaksa (nadiren)
+            // if (Math.random() < 0.1 && difficulty === 2) {
+            //     statusMessageEl.innerText = "Yapay Zeka (O) başlıyor...";
+            //     setTimeout(aiMove, 500); 
+            // }
+        }
+
+        // --- Olay Dinleyicileri ---
+        
+        // Wrapper, event listener'a index'i geçirir
+        function handleCellClickWrapper(event) {
+            const index = parseInt(event.target.dataset.index);
+            handleCellClick(index);
+        }
+
+        // Seviye seçimi değiştiğinde
+        levelSelectEl.addEventListener('change', (e) => {
+            difficulty = parseInt(e.target.value);
+            startGame();
+            statusMessageEl.innerText = `${e.target.options[e.target.selectedIndex].text} seviyesi seçildi. Yeni Oyun Başladı.`;
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        });
+
+        // Yeni Oyun Butonu
+        newGameBtn.addEventListener('click', () => {
+            startGame();
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        });
+        
+        // İstatistik Sıfırlama Butonu
+        resetStatsBtn.addEventListener('click', () => {
+             if(confirm("İstatistikleri sıfırlamak istediğinize emin misiniz?")) {
+                handleResetStats();
+             }
+        });
+
+        // --- Başlangıç Yükleme ---
+    levelSelectEl.value = difficulty.toString(); // Seçili seviyeyi ayarla
+        updateStatsDisplay(); // İstatistikleri yükle ve göster
+        startGame(); // Oyunu başlat
+    </script>
+</body>
+</html>
