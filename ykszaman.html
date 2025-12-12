@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - YKS/MSÜ Sayaçları</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Sayaç Kartları --- */
+        .countdown-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .countdown-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+        
+        /* Kart Başlığı */
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4D96FF; /* Ana Vurgu Rengi */
+        }
+        
+        .card-subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #222;
+            padding-bottom: 10px;
+        }
+        
+        /* Sayaç Kutuları */
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .timer-unit {
+            background: #222;
+            border-radius: 8px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+
+        .timer-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .timer-label {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+        
+        /* Detaylı Sayaç */
+        .detailed-timer {
+            display: flex;
+            justify-content: space-between;
+            background: #222;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ccc;
+        }
+        
+        .detailed-timer span:first-child {
+            color: #4D96FF;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        <div class="countdown-list" id="countdownList">
+            </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+
+        // --- Sınav Tarihleri (Target Dates) ---
+        // Yıl/Ay/Gün Saat:Dakika formatında (JS ayları 0'dan başlar, yani Haziran 5'tir)
+        const targetExams = [
+            { 
+                id: 'tyt', 
+                name: 'Temel Yeterlilik Testi (TYT)', 
+                date: new Date(2026, 5, 20, 10, 15, 0), // 20 Haziran 2026, 10:15
+                icon: 'fa-solid fa-graduation-cap' 
+            },
+            { 
+                id: 'ayt', 
+                name: 'Alan Yeterlilik Testi (AYT)', 
+                date: new Date(2026, 5, 21, 10, 15, 0), // 21 Haziran 2026, 10:15
+                icon: 'fa-solid fa-brain' 
+            },
+            { 
+                id: 'msu', 
+                name: 'Milli Savunma Üniversitesi (MSÜ)', 
+                // ÖSYM, MSÜ'yü genellikle Mart ayının ilk yarısında yapar. 1 Mart 2026 olarak ayarlayalım.
+                date: new Date(2026, 2, 1, 10, 15, 0), // 1 Mart 2026, 10:15
+                icon: 'fa-solid fa-shield-halved' 
+            }
+        ];
+
+        const countdownListEl = document.getElementById('countdownList');
+
+        // --- DOM Oluşturma ---
+        
+        function createCountdownCard(exam) {
+            const card = document.createElement('div');
+            card.className = 'countdown-card';
+            card.id = `card-${exam.id}`;
+            
+            const targetDateStr = exam.date.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }) 
+                                  + ' / ' 
+                                  + exam.date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            card.innerHTML = `
+                <h2 class="card-title">
+                    <i class="${exam.icon}"></i> ${exam.name}
+                </h2>
+                <div class="card-subtitle">Sınav Tarihi: ${targetDateStr}</div>
+                
+                <div class="timer-grid">
+                    <div class="timer-unit">
+                        <div class="timer-value" id="${exam.id}-days">000</div>
+                        <div class="timer-label">GÜN</div>
+                    </div>
+                    <div class="timer-unit">
+                        <div class="timer-value" id="${exam.id}-hours">00</div>
+                        <div class="timer-label">SAAT</div>
+                    </div>
+                    <div class="timer-unit">
+                        <div class="timer-value" id="${exam.id}-minutes">00</div>
+                        <div class="timer-label">DAKİKA</div>
+                    </div>
+                </div>
+                
+                <div class="detailed-timer">
+                    <span>KALAN SÜRE (saniye):</span>
+                    <span id="${exam.id}-seconds">00</span>
+                </div>
+            `;
+            countdownListEl.appendChild(card);
+        }
+
+        // --- Geri Sayım Mantığı ---
+        
+        function updateCountdown(exam) {
+            const now = new Date().getTime();
+            const distance = exam.date.getTime() - now;
+            
+            const daysEl = document.getElementById(`${exam.id}-days`);
+            const hoursEl = document.getElementById(`${exam.id}-hours`);
+            const minutesEl = document.getElementById(`${exam.id}-minutes`);
+            const secondsEl = document.getElementById(`${exam.id}-seconds`);
+
+            if (distance < 0) {
+                // Sınav geçti
+                daysEl.textContent = '00';
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = 'Bitti!';
+                const cardEl = document.getElementById(`card-${exam.id}`);
+                cardEl.style.opacity = '0.7';
+                cardEl.querySelector('.card-title').style.color = '#888';
+                return;
+            }
+
+            // Süre hesaplamaları
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // DOM güncelleme
+            daysEl.textContent = String(days).padStart(3, '0');
+            hoursEl.textContent = String(hours).padStart(2, '0');
+            minutesEl.textContent = String(minutes).padStart(2, '0');
+            secondsEl.textContent = String(seconds).padStart(2, '0');
+        }
+
+        // --- Uygulama Başlatma ---
+        
+        // 1. Tüm sınavlar için kartları oluştur
+        targetExams.forEach(exam => {
+            createCountdownCard(exam);
+        });
+
+        // 2. Sayımı başlat ve her saniye güncelle
+        function startAllCountdowns() {
+            targetExams.forEach(updateCountdown);
+        }
+
+        // İlk çalıştırma ve ardından interval kurma
+        startAllCountdowns();
+        setInterval(startAllCountdowns, 1000);
+
+    </script>
+</body>
+</html>
