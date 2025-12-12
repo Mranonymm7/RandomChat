@@ -18,7 +18,7 @@
         }
 
         body {
-            background-color: #000000; /* Simsiyah Arka Plan */
+            background-color: #000000;
             color: #ffffff;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
@@ -34,11 +34,12 @@
             align-items: center;
             padding: 15px 20px;
             background: rgba(20, 20, 20, 0.8);
-            backdrop-filter: blur(10px); /* Buzlu cam efekti */
+            backdrop-filter: blur(10px); 
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
+            height: 60px;
         }
 
         .brand {
@@ -54,24 +55,11 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            max-width: 60%; /* Sağ tarafın genişliğini sınırlar */
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            overflow: hidden; /* Taşmayı gizle */
         }
 
         .user-name {
             font-size: 0.9rem;
             font-weight: 600;
-            white-space: nowrap;      /* Alt satıra geçme */
-            overflow: hidden;         /* Taşan kısmı gizle */
-            text-overflow: ellipsis;  /* Taşan kısma ... koy */
-            max-width: 100px;         /* İsim için maksimum alan */
-            text-align: right;
         }
 
         .user-avatar {
@@ -90,6 +78,9 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            max-width: 650px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .section-title {
@@ -97,40 +88,57 @@
             color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
+            margin-top: 10px;
+            margin-bottom: 5px;
         }
 
+        /* --- Arama Kutusu Tasarımı --- */
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #111;
+            border: 2px solid #222;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+            margin-bottom: 15px;
+        }
+
+        .search-input:focus {
+            border-color: #fff;
+        }
+
+
         /* --- Tool Buton Tasarımı --- */
-        .tools-grid {
-            display: grid;
-            grid-template-columns: 1fr; /* Mobil öncelikli tek sütun */
-            gap: 15px;
+        .tools-list {
+            display: flex;
+            flex-direction: column; 
+            gap: 12px;
         }
 
         .tool-card {
             background: #111;
             border: 1px solid #222;
             border-radius: 16px;
-            padding: 20px;
+            padding: 15px;
             text-decoration: none;
             color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: all 0.2s ease-in-out;
             position: relative;
-            overflow: hidden;
         }
 
-        /* Hover ve Active Efektleri */
         .tool-card:active {
             transform: scale(0.98);
             background: #1a1a1a;
         }
 
-        .tool-card:hover {
-            border-color: #444;
-            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.05);
+        .tool-card[style*="none"] { /* Gizlenen kartlar için animasyon */
+            display: none !important;
         }
 
         .card-content {
@@ -149,6 +157,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .text-box h3 {
@@ -164,30 +173,101 @@
 
         .arrow-icon {
             color: #444;
-            transition: transform 0.3s ease;
+            transition: transform 0.2s ease;
+            font-size: 0.9rem;
         }
 
         .tool-card:hover .arrow-icon {
             transform: translateX(5px);
             color: #fff;
         }
-
-        /* Yükleniyor efekti */
-        .skeleton {
-            background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+        
+        /* --- Modal Tasarımı --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
 
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 25px;
+            max-width: 350px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .modal-content p {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.98);
         }
 
     </style>
 </head>
 <body>
 
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: #fff; margin-bottom: 15px;"></i>
+            <h2 id="modalTitle">Merhaba, Misafir!</h2>
+            <p>
+                Botta işe yarar araçlar bulunmaktadır. Botta yapacağınız işlemler kendi hesabınızda kalmaktadır ve **tamamen güvenlidir**. 
+                Telegram hesabınızın kapanması veya silinmesi durumunda işlemleriniz de silinir.
+            </p>
+            <button class="modal-btn" id="modalCloseBtn">Tamam</button>
+        </div>
+    </div>
+    
     <header>
         <div class="brand">ToolsTR</div>
         
@@ -200,11 +280,14 @@
     </header>
 
     <div class="container">
-        <div class="section-title">Araçlar</div>
 
-        <div class="tools-grid">
+        <input type="text" id="searchInput" class="search-input" placeholder="Araçları Ara (Örn: Hava, Not...)">
+
+        <div class="section-title">Tüm Araçlar</div>
+
+        <div class="tools-list" id="toolsList">
             
-            <a href="qr.html" class="tool-card">
+            <a href="qr.html" class="tool-card" data-search="qr oluşturucu, kod, karekod">
                 <div class="card-content">
                     <div class="icon-box">
                         <i class="fa-solid fa-qrcode"></i>
@@ -219,14 +302,14 @@
                 </div>
             </a>
 
-            <a href="not.html" class="tool-card">
+            <a href="not.html" class="tool-card" data-search="not oluştur, kişisel, not defteri, saklama">
                 <div class="card-content">
                     <div class="icon-box">
                         <i class="fa-solid fa-pen-to-square"></i>
                     </div>
                     <div class="text-box">
                         <h3>Not Oluştur</h3>
-                        <p>Kişisel notlarını sakla</p>
+                        <p>Kişisel notlarını LocalStorage ile sakla</p>
                     </div>
                 </div>
                 <div class="arrow-icon">
@@ -234,14 +317,29 @@
                 </div>
             </a>
 
-            <a href="hava.html" class="tool-card">
+            <a href="hava.html" class="tool-card" data-search="hava durumu, tahmin, sıcaklık, ip konum">
                 <div class="card-content">
                     <div class="icon-box">
                         <i class="fa-solid fa-cloud-sun"></i>
                     </div>
                     <div class="text-box">
                         <h3>Hava Durumu</h3>
-                        <p>Günlük tahminler</p>
+                        <p>IP konumuna göre günlük tahminler</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+            
+            <a href="ip.html" class="tool-card" data-search="ip sorgu, ip adresi, konum, bulucu">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-map-pin"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>IP Sorgu</h3>
+                        <p>Bir IP adresinin coğrafi konumunu bul</p>
                     </div>
                 </div>
                 <div class="arrow-icon">
@@ -249,58 +347,131 @@
                 </div>
             </a>
 
+            <a href="haber.html" class="tool-card" data-search="haberler, gündem, son dakika, gazete">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-newspaper"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>Haberler</h3>
+                        <p>Güncel haber başlıklarını takip et</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+
+            <a href="kronometre.html" class="tool-card" data-search="kronometre, zamanlayıcı, saat, ölçüm">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>Kronometre</h3>
+                        <p>Zamanı hassasça ölç</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+            
             </div>
     </div>
 
     <script>
-        // Telegram Web App Başlatma
         const tg = window.Telegram.WebApp;
-
-        // Uygulamayı tam ekran yap
         tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
 
-        // Renk şemasını (header bar rengini) ayarla
-        tg.setHeaderColor('#000000'); // Siyah header
-        tg.setBackgroundColor('#000000'); // Siyah arka plan
-
-        // DOM Elemanlarını Seç
+        // --- DOM Elemanları ---
         const userNameEl = document.getElementById('userName');
-        const userAvatarEl = document.getElementById('userAvatar');
-
-        // Kullanıcı verisini al (initDataUnsafe üzerinden)
+        const modalTitleEl = document.getElementById('modalTitle');
+        const infoModalEl = document.getElementById('infoModal');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const searchInput = document.getElementById('searchInput');
+        const toolsList = document.getElementById('toolsList');
+        const toolCards = toolsList.querySelectorAll('.tool-card');
+        
         const user = tg.initDataUnsafe.user;
+        const MODAL_KEY = 'tools_tr_modal_shown';
+
+        // --- Kullanıcı Bilgilerini Yükleme ---
+        let displayName = "Misafir";
 
         if (user) {
-            // İsim Gösterimi (Ad veya Username)
             if (user.first_name) {
-                // Sadece adı göster, eğer soyadı varsa ekle
-                userNameEl.innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+                displayName = user.first_name + (user.last_name ? " " + user.last_name : "");
             } else if (user.username) {
-                userNameEl.innerText = "@" + user.username;
+                displayName = "@" + user.username;
             }
+            // Başlıklar güncelleniyor
+            userNameEl.innerText = displayName;
+            modalTitleEl.innerText = `Merhaba, ${user.first_name || 'Kullanıcı'}!`;
 
-            // Profil Fotoğrafı Gösterimi (Varsa)
+            // Avatar (URL'si varsa)
+            const userAvatarEl = document.getElementById('userAvatar');
             if (user.photo_url) {
                 userAvatarEl.src = user.photo_url;
-            } else {
-                // Fotoğraf yoksa varsayılan kalır veya baş harf yapılabilir
-                // Şu an varsayılan placeholder kalıyor.
             }
-        } else {
-            // Tarayıcıda test ediyorsan burası çalışır
-            console.log("Telegram dışında çalıştırılıyor veya kullanıcı verisi yok.");
-            userNameEl.innerText = "Developer";
         }
 
-        // Butonlara tıklanınca titreşim (Haptic Feedback) ekle
-        document.querySelectorAll('.tool-card').forEach(card => {
+        // --- 1. Modal Yönetimi ---
+        function showModal() {
+            // Eğer daha önce gösterilmediyse
+            if (localStorage.getItem(MODAL_KEY) !== 'true') {
+                infoModalEl.classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            infoModalEl.classList.remove('active');
+            localStorage.setItem(MODAL_KEY, 'true');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+             closeModal();
+        });
+
+        // --- 2. Arama Filtreleme İşlevi ---
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            toolCards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                // data-search niteliğini kontrol et
+                const searchTags = card.getAttribute('data-search') ? card.getAttribute('data-search').toLowerCase() : '';
+                
+                const isMatch = title.includes(searchTerm) || 
+                                description.includes(searchTerm) ||
+                                searchTags.includes(searchTerm);
+                                
+                // Eşleşen kartları göster, eşleşmeyenleri gizle
+                card.style.display = isMatch ? 'flex' : 'none';
+            });
+            
+            // Arama yapıldığında titreşim
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        });
+
+
+        // --- 3. Titreşim ve Başlatma ---
+        
+        // Butonlara tıklanınca titreşim ekle
+        toolCards.forEach(card => {
             card.addEventListener('click', () => {
-                // Hafif bir titreşim verir (Sadece mobilde çalışır)
                 if(tg.HapticFeedback) {
                     tg.HapticFeedback.impactOccurred('light');
                 }
             });
         });
+
+        // Uygulama başladığında modalı göster
+        showModal();
 
     </script>
 </body>
