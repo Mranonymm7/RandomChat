@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - Şifre Oluşturucu</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Şifre Görüntüleme Alanı --- */
+        .password-display-container {
+            background-color: #111;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #passwordOutput {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.4rem;
+            word-break: break-all;
+            text-align: center;
+            color: #4D96FF;
+            min-height: 30px; /* Yer tutucu yükseklik */
+            padding: 5px 0;
+            margin-bottom: 10px;
+        }
+        
+        /* Şifre Kopyala Butonu */
+        #copyButton {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        #copyButton:hover, #copyButton:active {
+            background: #333;
+            border-color: #4D96FF;
+        }
+        
+        #copyButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- Ayarlar Formu --- */
+        .settings-card {
+            background: #111;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        /* Uzunluk Ayarı */
+        .setting-group {
+            margin-bottom: 20px;
+        }
+        
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ccc;
+        }
+
+        #lengthSlider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #222;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        #lengthSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4D96FF;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(77, 150, 255, 0.5);
+        }
+
+        #lengthDisplay {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #4D96FF;
+            text-align: right;
+        }
+        
+        /* Karakter Seçenekleri */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-left: 5px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #444;
+            border-radius: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked {
+            background-color: #4D96FF;
+            border-color: #4D96FF;
+        }
+
+        .checkbox-item label {
+            font-weight: 400;
+            color: #ccc;
+            user-select: none;
+        }
+
+        /* Generate Button */
+        #generateButton {
+            width: 100%;
+            padding: 15px;
+            background-color: #4D96FF;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        #generateButton:active {
+            background-color: #3a7fd9;
+        }
+        
+        #generateButton:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="password-display-container">
+            <div id="passwordOutput">Oluştur...</div>
+            
+            <button id="copyButton" disabled>
+                <i class="fa-regular fa-copy"></i>
+                <span id="copyText">Kopyala</span>
+            </button>
+        </div>
+
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-sliders"></i> Şifre Ayarları</h3>
+
+            <div class="setting-group">
+                <label for="lengthSlider">Şifre Uzunluğu:</label>
+                <input type="range" id="lengthSlider" min="2" max="64" value="16">
+                <div id="lengthDisplay">16 Karakter</div>
+            </div>
+
+            <div class="setting-group">
+                <label>Kullanılacak Karakterler:</label>
+                <div class="checkbox-group">
+                    
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="includeUppercase" checked>
+                        <label for="includeUppercase">Büyük Harfler (ABC...)</label>
+                    </div>
+
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="includeLowercase" checked>
+                        <label for="includeLowercase">Küçük Harfler (abc...)</label>
+                    </div>
+
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="includeNumbers" checked>
+                        <label for="includeNumbers">Rakamlar (123...)</label>
+                    </div>
+
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="includeSymbols">
+                        <label for="includeSymbols">Semboller (!@#$...)</label>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <button id="generateButton"><i class="fa-solid fa-arrows-rotate"></i> Şifre Oluştur</button>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+
+        // --- DOM Elemanları ---
+        const passwordOutputEl = document.getElementById('passwordOutput');
+        const lengthSliderEl = document.getElementById('lengthSlider');
+        const lengthDisplayEl = document.getElementById('lengthDisplay');
+        const includeUppercaseEl = document.getElementById('includeUppercase');
+        const includeLowercaseEl = document.getElementById('includeLowercase');
+        const includeNumbersEl = document.getElementById('includeNumbers');
+        const includeSymbolsEl = document.getElementById('includeSymbols');
+        const generateButtonEl = document.getElementById('generateButton');
+        const copyButtonEl = document.getElementById('copyButton');
+        const copyTextEl = document.getElementById('copyText');
+        
+        // --- Karakter Kümeleri ---
+        const CHARS_UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const CHARS_LOWERCASE = 'abcdefghijklmnopqrstuvwxyz';
+        const CHARS_NUMBERS = '0123456789';
+        const CHARS_SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        // --- Yardımcı Fonksiyonlar ---
+
+        /**
+         * Şifre oluşturma mantığı
+         */
+        function generatePassword() {
+            const length = parseInt(lengthSliderEl.value);
+            let charSet = '';
+            
+            // Seçili karakter kümelerini birleştir
+            if (includeUppercaseEl.checked) charSet += CHARS_UPPERCASE;
+            if (includeLowercaseEl.checked) charSet += CHARS_LOWERCASE;
+            if (includeNumbersEl.checked) charSet += CHARS_NUMBERS;
+            if (includeSymbolsEl.checked) charSet += CHARS_SYMBOLS;
+
+            // En az bir karakter seti seçili olmalı
+            if (charSet.length === 0) {
+                passwordOutputEl.textContent = 'En az bir karakter seçin!';
+                copyButtonEl.disabled = true;
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                return;
+            }
+            
+            let password = '';
+            const charSetLength = charSet.length;
+            
+            // Güvenli rastgele sayı üretimi (Math.random yerine kullanılması tercih edilir, ancak basitlik için Math.random kullanıldı)
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * charSetLength);
+                password += charSet.charAt(randomIndex);
+            }
+            
+            passwordOutputEl.textContent = password;
+            copyButtonEl.disabled = false;
+            
+            // Telegram'a Başarı Bildirimi
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        /**
+         * Oluşturulan şifreyi panoya kopyalar
+         */
+        function copyPassword() {
+            const password = passwordOutputEl.textContent;
+            
+            if (password === 'Oluştur...' || password.includes('En az bir karakter seçin')) return;
+            
+            navigator.clipboard.writeText(password).then(() => {
+                copyTextEl.textContent = 'Kopyalandı!';
+                copyButtonEl.style.background = '#4CAF50';
+                
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                setTimeout(() => {
+                    copyTextEl.textContent = 'Kopyala';
+                    copyButtonEl.style.background = '#222';
+                }, 1500);
+            }).catch(err => {
+                copyTextEl.textContent = 'Hata!';
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                console.error('Kopyalama hatası:', err);
+            });
+        }
+        
+        // --- Olay Dinleyicileri ---
+
+        // Uzunluk kaydırıcısı değiştiğinde
+        lengthSliderEl.addEventListener('input', function() {
+            lengthDisplayEl.textContent = `${this.value} Karakter`;
+        });
+        
+        // Tüm çekme kutularının dinleyicileri (En az bir tane seçili olmalı)
+        [includeUppercaseEl, includeLowercaseEl, includeNumbersEl, includeSymbolsEl].forEach(checkbox => {
+            checkbox.addEventListener('change', checkMinimumSelection);
+        });
+
+        // Minimum bir karakter setinin seçili olup olmadığını kontrol eder
+        function checkMinimumSelection() {
+            const isAnyChecked = includeUppercaseEl.checked || includeLowercaseEl.checked || includeNumbersEl.checked || includeSymbolsEl.checked;
+            generateButtonEl.disabled = !isAnyChecked;
+            if (!isAnyChecked) {
+                 passwordOutputEl.textContent = 'En az bir karakter seçin!';
+                 copyButtonEl.disabled = true;
+            } else {
+                 // Karakter seti değiştiğinde yeni şifre oluşturmayı tetikle
+                 // generatePassword(); 
+            }
+        }
+
+        // Şifre oluştur butonuna tıklandığında
+        generateButtonEl.addEventListener('click', generatePassword);
+
+        // Kopyala butonuna tıklandığında
+        copyButtonEl.addEventListener('click', copyPassword);
+
+        // --- Uygulama Başlangıcı ---
+        // Başlangıçta minimum seçim kontrolünü yap
+        checkMinimumSelection();
+
+    </script>
+</body>
+</html>
