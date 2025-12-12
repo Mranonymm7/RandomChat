@@ -131,12 +131,13 @@
 <header><div class="brand">ToolsTR - Namaz Vakitleri</div></header>
 <div class="container">
     <form id="searchForm">
-        <input id="cityInput" class="text-input" placeholder="Şehir adı girin (örn: Istanbul veya Paris)" required />
+        <input id="cityInput" class="text-input" placeholder="Şehir adı girin (örn: Istanbul)" required />
+        <input type="hidden" id="countryInput" value="Turkey" /> 
         <button type="submit" id="fetchBtn"><i class="fa-solid fa-magnifying-glass"></i> Sorgula</button>
     </form>
 
     <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</div>
-    <div id="status">Lütfen yukarıya şehir adını girerek sorgulayın.</div>
+    <div id="status">Lütfen yukarıya şehir adını girerek sorgulayın. (Varsayılan Ülke: Türkiye)</div>
     <div id="error"></div>
 
     <div class="prayer-table" id="prayerTable">
@@ -164,7 +165,7 @@
     // --- DOM Elemanları ---
     const searchForm = document.getElementById('searchForm');
     const cityInput = document.getElementById('cityInput');
-    const fetchBtn = document.getElementById('fetchBtn');
+    const countryInput = document.getElementById('countryInput'); // Gizli alan
     const loadingEl = document.getElementById('loading');
     const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
@@ -180,7 +181,6 @@
 
     // --- Yardımcı Fonksiyonlar ---
     
-    // API'den gelen İngilizce/Arapça isimleri Türkçe'ye çevir ve birleştir
     function mapKeysToTurkish(obj){
         return {
             Imsak: obj.Fajr || obj.Imsak || '--',
@@ -192,13 +192,11 @@
         };
     }
 
-    // Saati dakikaya çevir
     function parseTimeToMinutes(timeStr) {
         const [h,m] = (timeStr || '00:00').split(':').map(s=>parseInt(s,10)||0);
         return h*60 + m;
     }
 
-    // Belirtilen saat dilimine göre şimdiki zamanı dakika cinsinden al
     function getNowMinutesInTimezone(timezone) {
         try {
             const date = new Date();
@@ -207,27 +205,22 @@
             const [h, m] = timeString.split(':').map(Number);
             return h*60 + m;
         } catch(e) {
-            // Hata olursa varsayılan sistem saatini kullan
             const d = new Date();
             return d.getHours()*60 + d.getMinutes();
         }
     }
 
-    // Sıradaki (aktif) namaz vaktini bul
     function findNextPrayerIndex(timesObj, timezone) {
         const order = ['Imsak','Gunes','Ogle','Ikindi','Aksam','Yatsi'];
         const nowMin = getNowMinutesInTimezone(timezone);
         
         for (let i=0;i<order.length;i++){
             const t = parseTimeToMinutes(timesObj[order[i]]);
-            if (nowMin < t) return i; // Sıradaki vakit bulundu
+            if (nowMin < t) return i; 
         }
-        
-        // Eğer tüm vakitler geçtiyse (gece yarısından sonra), sıradaki vakit İmsak'tır.
         return 0;
     }
 
-    // İkonları eşleştir
     function getIconForPrayer(key){
         const icons = { Imsak:'fa-solid fa-cloud-moon', Gunes:'fa-solid fa-sun', Ogle:'fa-solid fa-sun-plant-wilt', Ikindi:'fa-solid fa-cloud-sun', Aksam:'fa-solid fa-moon', Yatsi:'fa-solid fa-star' };
         return icons[key] || 'fa-solid fa-clock';
@@ -236,11 +229,9 @@
     // --- Render İşlemleri ---
     function renderTimes(timings, meta) {
         const times = mapKeysToTurkish(timings);
-        
-        // Timezone bilgisi yoksa varsayılanı kullan
         const tz = meta && meta.timezone ? meta.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone;
         
-        // Header güncellemeleri
+        // Şehir adını temizleyerek gösterme
         headerCity.innerText = meta && meta.city ? meta.city : (meta.timezone || 'Bilinmeyen Konum');
         headerDate.innerText = meta && meta.date && meta.date.readable ? meta.date.readable : new Date().toLocaleDateString('tr-TR');
         
@@ -264,13 +255,14 @@
     }
 
     // --- API Çağrısı ---
-    async function fetchByCity(city) {
+    async function fetchByCity(city, country) {
         showLoading(`${city} için vakitler alınıyor...`);
         try {
             const c = encodeURIComponent(city);
-            // Varsayılan hesaplama metodu 2 (ISNA) olarak ayarlandı. 
-            // Ülke filtresi kaldırıldı, API coğrafi olarak en uygun şehri bulacaktır.
-            const url = `https://api.aladhan.com/v1/timingsByCity?city=${c}&method=2`; 
+            const countryParam = encodeURIComponent(country);
+            
+            // API'ye hem şehir hem de ülke bilgisini gönderiyoruz.
+            const url = `https://api.aladhan.com/v1/timingsByCity?city=${c}&country=${countryParam}&method=2`; 
             
             const res = await fetch(url);
             if (!res.ok) {
@@ -279,18 +271,21 @@
             }
             const json = await res.json();
             
-            if (!json || json.code !== 200 || !json.data) throw new Error('Vakit verisi bulunamadı. Şehir adını kontrol edin.');
+            if (!json || json.code !== 200 || !json.data) {
+                // Hata mesajı API'den gelse de (örneğin şehir bulunamazsa), kullanıcıya temiz bir mesaj verelim.
+                throw new Error('Vakit verisi bulunamadı. Lütfen şehir adını kontrol edin.');
+            }
             
             const timings = json.data.timings;
             const meta = {
                 timezone: json.data.meta.timezone || '',
                 date: json.data.date,
-                city: json.data.meta.latitude ? `${city} (${json.data.meta.timezone.split('/').pop().replace('_', ' ')})` : city
+                city: `${city} (${country})` // Gösterilecek başlık
             };
             
             renderTimes(timings, meta);
         } catch (err) {
-            showError('Vakit alınamadı. Şehir adı yanlış olabilir veya API erişim sorunu var. Hata: ' + (err && err.message ? err.message : String(err)));
+            showError('Vakit alınamadı: ' + (err && err.message ? err.message : 'Bilinmeyen bir hata oluştu. Şehir/Ülke adını kontrol edin.'));
             console.error('Pray fetch error:', err);
         }
     }
@@ -299,8 +294,22 @@
     searchForm.addEventListener('submit', function(e){
         e.preventDefault();
         const city = cityInput.value.trim();
+        let country = countryInput.value.trim(); 
+
         if (!city) { showError('Lütfen bir şehir adı girin.'); return; }
-        fetchByCity(city);
+        
+        // Eğer kullanıcı Istanbul, USA gibi bir giriş yaptıysa, ülke bilgisini ayrıştır
+        let finalCity = city;
+        let finalCountry = country; // Varsayılan ülke (Turkey)
+        
+        if (city.includes(',')) {
+            const parts = city.split(',').map(p => p.trim());
+            finalCity = parts[0];
+            finalCountry = parts.length > 1 ? parts[1] : country;
+            cityInput.value = finalCity; // Sadece şehir adını kutuda bırak
+        }
+        
+        fetchByCity(finalCity, finalCountry);
         cityInput.blur();
     });
 
@@ -308,7 +317,7 @@
     (function init(){
         headerCity.innerText = 'Şehir Adı';
         headerDate.innerText = 'Tarih';
-        showStatus('Lütfen yukarıya şehir adını girerek sorgulayın.');
+        showStatus('Lütfen yukarıya şehir adını girerek sorgulayın. (Varsayılan Ülke: Türkiye)');
     })();
 </script>
 </body>
