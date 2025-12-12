@@ -63,12 +63,13 @@
         /* --- Giriş ve Buton Alanı --- */
         .input-group {
             display: flex;
-            gap: 10px;
+            flex-direction: column; /* Input ve Butonu alt alta koy */
+            gap: 15px; /* Boşluğu artır */
             margin-bottom: 30px;
         }
 
         .ip-input {
-            flex-grow: 1;
+            width: 100%;
             padding: 15px;
             background-color: #111;
             border: 2px solid #222;
@@ -84,6 +85,7 @@
         }
 
         .btn-main {
+            width: 100%; /* Butonu genişlet */
             padding: 15px 20px;
             background-color: #fff;
             color: #000;
@@ -92,11 +94,10 @@
             font-weight: 800;
             cursor: pointer;
             transition: transform 0.2s;
-            flex-shrink: 0;
         }
 
         .btn-main:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
         }
 
         /* --- Sonuç Kartı --- */
@@ -127,7 +128,7 @@
 
         .result-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start; /* İçeriğin yukarıda hizalanması */
             gap: 10px;
             font-size: 1rem;
             padding: 8px 0;
@@ -142,18 +143,20 @@
             color: #fff;
             width: 25px;
             text-align: center;
+            padding-top: 3px; /* İkonu yukarı hizala */
         }
 
         .result-label {
             color: #888;
             font-weight: 600;
             flex-shrink: 0;
+            width: 100px; /* Label'a sabit genişlik ver */
         }
 
         .result-value {
             color: #ccc;
-            overflow-wrap: break-word; /* Uzun ISS isimleri için */
-            word-break: break-all;
+            flex-grow: 1;
+            word-break: break-word; 
         }
 
         /* --- Durum Mesajları --- */
@@ -190,11 +193,12 @@
     <div class="container">
         
         <div class="ip-info-text">
-            <i class="fa-solid fa-earth-americas"></i> Başlangıçta IP adresinizden otomatik konum ve ağ bilgileri bulunur. Farklı bir IP adresi girerek sorgulama yapabilirsiniz.
+            <i class="fa-solid fa-earth-americas"></i> Başlangıçta kendi IP adresinizden otomatik bilgi çekilir. Farklı bir IP girmek için arama kutusunu kullanın.
         </div>
         
         <div class="input-group">
             <input type="text" id="ipInput" class="ip-input" placeholder="IP Adresi Girin (Örn: 8.8.8.8)" pattern="^(\d{1,3}\.){3}\d{1,3}$" title="Geçerli bir IP adresi giriniz." autocomplete="off">
+            
             <button class="btn-main" id="searchBtn">
                 <i class="fa-solid fa-search"></i> Sorgula
             </button>
@@ -214,8 +218,8 @@
             
             <div class="result-item">
                 <i class="fa-solid fa-city"></i> 
-                <span class="result-label">Konum:</span> 
-                <span class="result-value" id="locationResult">--</span>
+                <span class="result-label">Şehir:</span> 
+                <span class="result-value" id="cityResult">--</span>
             </div>
             
             <div class="result-item">
@@ -229,6 +233,12 @@
                 <span class="result-label">Koordinatlar:</span> 
                 <span class="result-value" id="coordsResult">--</span>
             </div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-globe"></i> 
+                <span class="result-label">Saat Dilimi:</span> 
+                <span class="result-value" id="timezoneResult">--</span>
+            </div>
 
             <div class="result-item">
                 <i class="fa-solid fa-server"></i> 
@@ -240,6 +250,12 @@
                 <i class="fa-solid fa-building"></i> 
                 <span class="result-label">Organizasyon:</span> 
                 <span class="result-value" id="orgResult">--</span>
+            </div>
+            
+            <div class="result-item">
+                <i class="fa-solid fa-dollar-sign"></i> 
+                <span class="result-label">Para Birimi:</span> 
+                <span class="result-value" id="currencyResult">--</span>
             </div>
         </div>
 
@@ -257,9 +273,10 @@
         tg.BackButton.onClick(() => window.location.href = 'index.html');
 
         // --- Sabitler ---
-        // ip-api.com: city, regionName, country, lat, lon, isp, org, query alanlarını çeker
-        const IP_API_BASE_URL = 'http://ip-api.com/json/'; 
-        const API_FIELDS = 'status,message,country,countryCode,regionName,city,lat,lon,isp,org,query';
+        // ip-api.com API'sini HTTPS üzerinden çağırıyoruz.
+        const IP_API_BASE_URL = 'https://ip-api.com/json/'; 
+        // Çekilecek Alanlar (timezone ve currency eklendi)
+        const API_FIELDS = 'status,message,country,countryCode,regionName,city,lat,lon,isp,org,query,timezone,currency';
 
         // --- DOM Elemanları ---
         const ipInput = document.getElementById('ipInput');
@@ -271,11 +288,14 @@
 
         // Sonuç alanları
         const ipAddressResultEl = document.getElementById('ipAddressResult');
-        const locationResultEl = document.getElementById('locationResult');
+        const cityResultEl = document.getElementById('cityResult');
         const countryRegionResultEl = document.getElementById('countryRegionResult');
         const coordsResultEl = document.getElementById('coordsResult');
+        const timezoneResultEl = document.getElementById('timezoneResult');
         const ispResultEl = document.getElementById('ispResult');
         const orgResultEl = document.getElementById('orgResult');
+        const currencyResultEl = document.getElementById('currencyResult');
+
 
         // --- Durum Yönetimi ---
         const setLoading = (show, message = null) => {
@@ -288,17 +308,19 @@
 
         const showError = (message) => {
             setLoading(false);
-            errorEl.innerText = `Hata: ${message}`;
+            errorEl.innerHTML = `
+                <i class="fa-solid fa-circle-exclamation" style="margin-right: 5px;"></i> 
+                **Sorgulama Hatası:** ${message}.
+            `;
             errorEl.style.display = 'block';
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
         };
 
-        // --- IP Adresi Kontrolü (Basit Regex) ---
+        // --- IP Adresi Kontrolü (IPv4) ---
         function isValidIP(ip) {
             const regex = /^(\d{1,3}\.){3}\d{1,3}$/;
             if (!regex.test(ip)) return false;
             
-            // 0-255 aralığını kontrol et
             return ip.split('.').every(segment => {
                 const num = parseInt(segment);
                 return num >= 0 && num <= 255;
@@ -307,27 +329,35 @@
         
         // --- IP Sorgulama Fonksiyonu ---
         async function findIPDetails(ip = '') {
-            setLoading(true, ip ? `${ip} için bilgiler aranıyor...` : `Kendi IP'niz otomatik aranıyor...`);
+            setLoading(true, ip ? `${ip} için bilgiler aranıyor...` : `Kendi IP adresiniz otomatik aranıyor...`);
             
-            // API URL'sini oluştur
             const API_URL = `${IP_API_BASE_URL}${ip}?fields=${API_FIELDS}`;
 
             try {
                 const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Servis bağlantı hatası.');
+
+                if (!response.ok) {
+                    // HTTP hatası (404, 500 vb.)
+                    throw new Error(`Ağ bağlantısı başarısız. Durum kodu: ${response.status}`);
+                }
                 
                 const data = await response.json();
 
                 if (data.status !== 'success') {
-                    // Geçersiz IP adresi veya API limitine takılma
-                    throw new Error(data.message || 'Sorgulama başarısız oldu.');
+                    // API'den gelen mantıksal hata (geçersiz IP, limit vb.)
+                    throw new Error(data.message || 'Sorgu sonucu başarısız oldu.');
                 }
                 
-                // Sonuçları ekranda göster
+                // Başarılı sonuçları ekranda göster
                 displayResults(data);
 
             } catch (error) {
-                showError(`Sorgulama hatası: ${error.message}. Lütfen IP adresini kontrol edin.`);
+                // Network hatası (Failed to fetch) veya diğer istisnalar
+                let errorMessage = error.message.includes('Failed to fetch') 
+                    ? 'Ağ erişimi sağlanamadı. Lütfen internet bağlantınızı ve güvenlik ayarlarınızı kontrol edin.' 
+                    : error.message;
+                    
+                showError(errorMessage);
                 console.error('IP search error:', error);
             }
         }
@@ -338,39 +368,37 @@
             resultCardEl.style.display = 'flex';
             
             // Başlık
-            cardTitleEl.innerText = `Sorgu Sonuçları`;
+            cardTitleEl.innerText = `${data.query === data.isp ? 'Sorgu Sonuçları' : data.query} IP Bilgileri`;
 
             // Verileri bas
             ipAddressResultEl.innerText = data.query || 'N/A';
-            locationResultEl.innerText = `${data.city || 'Bilinmiyor'}`;
-            countryRegionResultEl.innerText = `${data.country || 'Bilinmiyor'} (${data.regionName || 'N/A'})`;
+            cityResultEl.innerText = `${data.city || 'Bilinmiyor'} (${data.regionName || 'N/A'})`;
+            countryRegionResultEl.innerText = `${data.country || 'Bilinmiyor'} (${data.countryCode || 'N/A'})`;
             coordsResultEl.innerText = `${data.lat ? data.lat.toFixed(4) : 'N/A'}, ${data.lon ? data.lon.toFixed(4) : 'N/A'}`;
+            timezoneResultEl.innerText = data.timezone || 'N/A';
             ispResultEl.innerText = data.isp || 'N/A';
             orgResultEl.innerText = data.org || 'N/A';
+            currencyResultEl.innerText = data.currency || 'N/A';
             
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
         
         // --- Olay Dinleyicileri ---
-        
-        // Sorgula Butonu
         searchBtn.addEventListener('click', () => {
             const ip = ipInput.value.trim();
             if (ip) {
                 if (isValidIP(ip)) {
                     findIPDetails(ip);
-                    ipInput.blur(); // Klavyeyi kapat
+                    ipInput.blur();
                 } else {
                     showError('Lütfen geçerli bir IPv4 adresi girin.');
                 }
             } else {
-                 // Boşsa kendi IP'si için sorgula
                  findIPDetails();
-                 ipInput.blur(); 
+                 ipInput.blur();
             }
         });
         
-        // Enter tuşu ile sorgulama
         ipInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -379,7 +407,6 @@
         });
 
         // --- Uygulama Başlangıcı ---
-        // Uygulama açıldığında otomatik olarak kullanıcının IP adresini sorgula
         findIPDetails();
 
     </script>
