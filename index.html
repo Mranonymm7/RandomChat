@@ -118,6 +118,15 @@
             gap: 12px;
         }
 
+        .pulse-icon i {
+    animation: pulse 1.4s infinite ease-in-out;
+}
+@keyframes pulse {
+    0% { transform:scale(1); opacity:0.9; }
+    50% { transform:scale(1.25); opacity:1; }
+    100% { transform:scale(1); opacity:0.9; }
+}
+
         .tool-card {
             background: #111;
             border: 1px solid #222;
@@ -467,7 +476,36 @@
         <i class="fa-solid fa-chevron-right"></i>
     </div>
 </a>
-            
+            <a href="kumar.html" class="tool-card" data-search="kumar, oyun, casino, şans">
+    <div class="card-content">
+        <div class="icon-box spin-icon">
+            <i class="fa-solid fa-dice"></i>
+        </div>
+        <div class="text-box">
+            <h3>Kumar</h3>
+            <p>Bahis yap ve oyna</p>
+        </div>
+    </div>
+    <div class="arrow-icon">
+        <i class="fa-solid fa-chevron-right"></i>
+    </div>
+</a>
+
+<!-- ÇİZİM -->
+<a href="cizim.html" class="tool-card" data-search="çizim, paint, çiz, doodle">
+    <div class="card-content">
+        <div class="icon-box pulse-icon">
+            <i class="fa-solid fa-pencil"></i>
+        </div>
+        <div class="text-box">
+            <h3>Çizim</h3>
+            <p>Hayal gücünü aktar</p>
+        </div>
+    </div>
+    <div class="arrow-icon">
+        <i class="fa-solid fa-chevron-right"></i>
+    </div>
+</a>
 
             <a href="kronometre.html" class="tool-card" data-search="kronometre, zamanlayıcı, saat, ölçüm">
                 <div class="card-content">
