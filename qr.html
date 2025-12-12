@@ -28,10 +28,10 @@
             flex-direction: column;
         }
 
-        /* --- Header Tasarımı (Tutarlılık için) --- */
+        /* --- Header ve Başlık --- */
         header {
             display: flex;
-            justify-content: center; /* Başlığı ortala */
+            justify-content: center;
             align-items: center;
             padding: 15px 20px;
             background: rgba(20, 20, 20, 0.8);
@@ -43,7 +43,6 @@
             height: 60px;
         }
 
-        /* Alt sayfalarda sadece marka ismi ortada şık durur */
         .brand {
             font-weight: 800;
             font-size: 1.1rem;
@@ -69,13 +68,11 @@
         /* --- Input Alanı --- */
         .input-group {
             width: 100%;
-            position: relative;
         }
 
         .qr-input {
             width: 100%;
             padding: 18px 20px;
-            padding-right: 50px; /* İkon için yer */
             background-color: #111;
             border: 2px solid #222;
             border-radius: 16px;
@@ -84,6 +81,8 @@
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
             outline: none;
+            resize: none; /* Metin alanı için */
+            min-height: 100px;
         }
 
         .qr-input:focus {
@@ -91,15 +90,7 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
         }
 
-        .input-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-        }
-
-        /* --- Ana Buton (Oluştur) --- */
+        /* --- Ana Buton --- */
         .btn-main {
             width: 100%;
             padding: 18px;
@@ -124,20 +115,19 @@
 
         /* --- QR Kod Gösterim Alanı --- */
         #qrResultContainer {
-            background: #fff; /* QR okuması için beyaz zemin şart */
+            background: #fff;
             padding: 25px;
             border-radius: 24px;
             box-shadow: 0 10px 30px rgba(255, 255, 255, 0.05);
-            display: none; /* Başlangıçta gizli */
+            display: none;
             flex-direction: column;
             align-items: center;
             gap: 20px;
             width: 100%;
-            max-width: 350px;
+            max-width: 250px;
             animation: slideUp 0.5s ease forwards;
         }
-
-        /* QR Kodun kendisinin oturduğu yer */
+        
         #qrcode {
             width: 200px;
             height: 200px;
@@ -145,15 +135,8 @@
             justify-content: center;
             align-items: center;
         }
-        
-        /* Kütüphanenin oluşturduğu görselin ayarı */
-        #qrcode img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
 
-        /* --- Aksiyon Butonları (İndir / Paylaş) --- */
+        /* --- Aksiyon Butonları --- */
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -175,21 +158,74 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.2s;
+            text-decoration: none; /* Paylaşma TWA fonksiyonu ile yapılacağı için link gibi davranmasın */
         }
         
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
         .btn-action.download {
             background-color: #fff;
             color: #000;
-            border: 2px solid #000;
-        }
-        
-         .btn-action.share {
-            background-color: #000;
-            color: #fff;
         }
 
-        .btn-action:active {
-            transform: scale(0.95);
+        /* --- Geçmiş Kısmı --- */
+        .history-section {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-top: 1px solid #222;
+            padding-top: 25px;
+        }
+
+        #historyList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:active {
+            transform: scale(0.98);
+        }
+
+        .history-text {
+            flex: 1;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ccc;
+        }
+
+        .history-icon {
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .history-item.empty {
+            text-align: center;
+            color: #666;
+            font-style: italic;
         }
 
         /* --- Animasyonlar --- */
@@ -209,8 +245,7 @@
     <div class="container">
         
         <div class="input-group">
-            <input type="text" id="textInput" class="qr-input" placeholder="Bağlantı veya metin yapıştırın..." autocomplete="off">
-            <i class="fa-solid fa-link input-icon"></i>
+            <textarea id="textInput" class="qr-input" placeholder="Bağlantı, metin veya mesaj yapıştırın..." rows="4" autocomplete="off"></textarea>
         </div>
 
         <button class="btn-main" id="generateBtn">
@@ -222,7 +257,7 @@
             <div id="qrcode"></div>
             
             <div class="action-buttons">
-                <button class="btn-action download" id="downloadBtn">
+                <button class="btn-action download" id="downloadBtn" disabled>
                     <i class="fa-solid fa-download"></i> İndir
                 </button>
                 <button class="btn-action share" id="shareBtn">
@@ -231,118 +266,188 @@
             </div>
         </div>
 
+        <div class="history-section">
+            <div class="section-title">Oluşturma Geçmişi</div>
+            <div id="historyList">
+                </div>
+        </div>
+
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // Header ve arka plan rengini sabitle
         tg.setHeaderColor('#000000');
         tg.setBackgroundColor('#000000');
 
-        // Geri Butonunu Aktif Et (Ana sayfaya dönmek için)
+        // Geri Butonu: Sol üstte görünmesini ve index.html'ye dönmesini sağlar.
         tg.BackButton.show();
         tg.BackButton.onClick(function() {
             window.location.href = 'index.html';
         });
 
-        // Elemanları Seç
+        // DOM Elemanları
+        const QR_HISTORY_KEY = 'toolsTR_qr_history';
         const textInput = document.getElementById('textInput');
         const generateBtn = document.getElementById('generateBtn');
         const qrResultContainer = document.getElementById('qrResultContainer');
         const qrcodeDiv = document.getElementById('qrcode');
         const downloadBtn = document.getElementById('downloadBtn');
         const shareBtn = document.getElementById('shareBtn');
+        const historyList = document.getElementById('historyList');
 
-        let qrCodeObject = null; // QR kod objesini tutacak değişken
+        let currentQrData = null; // Oluşturulan son QR metnini tutar
+
+        // --- LOCAL STORAGE Fonksiyonları ---
+
+        // Geçmişi Local Storage'dan yükler
+        function loadHistory() {
+            const history = localStorage.getItem(QR_HISTORY_KEY);
+            return history ? JSON.parse(history) : [];
+        }
+
+        // Geçmişe yeni bir kayıt ekler (Maks. 10 kayıt tutulur)
+        function saveToHistory(text) {
+            let history = loadHistory();
+            
+            // Aynı metin zaten varsa, onu en üste taşı
+            history = history.filter(item => item !== text);
+
+            // Yeni metni en başa ekle
+            history.unshift(text);
+
+            // Maksimum 10 kayıt tut
+            if (history.length > 10) {
+                history = history.slice(0, 10);
+            }
+
+            localStorage.setItem(QR_HISTORY_KEY, JSON.stringify(history));
+            renderHistory();
+        }
+
+        // Geçmiş listesini ekranda oluşturur
+        function renderHistory() {
+            historyList.innerHTML = '';
+            const history = loadHistory();
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-item empty">Henüz oluşturulmuş QR kodu yok.</div>';
+                return;
+            }
+
+            history.forEach(text => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.title = text; // Tam metni tooltipe koy
+                item.innerHTML = `
+                    <span class="history-text">${text}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square history-icon"></i>
+                `;
+                item.addEventListener('click', () => {
+                    textInput.value = text;
+                    generateQR(text); // Geçmişteki kodu yeniden oluştur
+                    if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                });
+                historyList.appendChild(item);
+            });
+        }
 
         // --- QR Oluşturma Fonksiyonu ---
-        function generateQR() {
-            const text = textInput.value.trim();
+        function generateQR(textFromHistory = null) {
+            const text = textFromHistory || textInput.value.trim();
 
             if (!text) {
-                // Titreşim ile hata bildirimi
                 if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                 textInput.focus();
                 return;
             }
 
-            // Başarılı titreşim
             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
             // Önceki QR'ı temizle
             qrcodeDiv.innerHTML = '';
             
-            // Konteyneri göster (animasyonla açılır)
+            // Konteyneri göster
             qrResultContainer.style.display = 'flex';
 
             // Yeni QR oluştur
-            qrCodeObject = new QRCode(qrcodeDiv, {
+            currentQrData = text; // Paylaşım için veriyi sakla
+            new QRCode(qrcodeDiv, {
                 text: text,
                 width: 200,
                 height: 200,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H // Yüksek hata düzeltme
+                correctLevel : QRCode.CorrectLevel.H
             });
             
+            // Geçmişe kaydet
+            saveToHistory(text);
+
             // Klavye açıksa kapat
             textInput.blur();
         }
 
-        // --- Butona Tıklama Olayı ---
-        generateBtn.addEventListener('click', generateQR);
-        
-        // --- Enter Tuşuna Basma Olayı ---
+        // --- Aksiyon Fonksiyonları ---
+
+        // 1. TWA Paylaşma (Telegram'ın kendi mesaj gönderme arayüzünü kullanır)
+        shareBtn.addEventListener('click', () => {
+            if (!currentQrData) return;
+
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+            // Kullanıcıya oluşturduğu metni veya linki gönderme teklifi sunar
+            tg.showPopup({
+                title: 'QR Kodu Paylaş',
+                message: `"${currentQrData}" içeriğini bir Telegram sohbetinde paylaşmak ister misiniz?`,
+                buttons: [
+                    {id: 'yes', type: 'default', text: 'Evet, Paylaş'},
+                    {id: 'no', type: 'cancel', text: 'İptal'}
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'yes') {
+                    // Telegram'ın kendi paylaşma penceresini açar
+                    tg.switchInlineQuery(currentQrData, ['users', 'groups']);
+                    
+                    // Alternatif olarak metni panoya kopyalayıp kullanıcıya bilgi verebiliriz
+                    // navigator.clipboard.writeText(currentQrData).then(() => {
+                    //     tg.showPopup({title: 'Kopyalandı', message: 'QR metni panoya kopyalandı. İstediğiniz yere yapıştırın.'});
+                    // });
+                }
+            });
+        });
+
+        // 2. TWA Indirme (TWA içinde dosya indirme zor olduğu için, geçici olarak sadece panoya kopyalama yapıyoruz)
+        downloadBtn.addEventListener('click', () => {
+            // TWA içinde direkt resim indirmek zordur. Bunun yerine, metni kopyalayıp indirme linki verebiliriz.
+            if (!currentQrData) return;
+
+            // QR metnini panoya kopyala
+            navigator.clipboard.writeText(currentQrData).then(() => {
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                tg.showPopup({
+                    title: 'İçerik Kopyalandı',
+                    message: 'QR kodunun metni panoya kopyalandı. Harici bir QR okuyucu uygulaması ile okutabilirsiniz.'
+                });
+            }).catch(err => {
+                console.error('Kopyalama hatası:', err);
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            });
+        });
+
+
+        // --- Başlangıç Olayları ---
+        generateBtn.addEventListener('click', () => generateQR());
         textInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) { // Shift+Enter alt satır, sadece Enter QR oluşturur
+                e.preventDefault(); 
                 generateQR();
             }
         });
 
-        // --- QR İndirme Fonksiyonu ---
-        downloadBtn.addEventListener('click', () => {
-            const qrImage = qrcodeDiv.querySelector('img');
-            if (qrImage) {
-                const imageSrc = qrImage.src;
-                // Geçici bir indirme bağlantısı oluştur
-                const link = document.createElement('a');
-                link.href = imageSrc;
-                link.download = 'ToolsTR-QR.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                 if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            }
-        });
-
-        // --- QR Paylaşma Fonksiyonu (Mobil Native Paylaşım) ---
-        shareBtn.addEventListener('click', async () => {
-             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            const qrImage = qrcodeDiv.querySelector('img');
-            if (qrImage && navigator.share) {
-                try {
-                    // Resmi blob'a çevir (paylaşım için gerekli)
-                    const response = await fetch(qrImage.src);
-                    const blob = await response.blob();
-                    const file = new File([blob], "qr-code.png", { type: "image/png" });
-
-                    // Native paylaşım menüsünü aç
-                    await navigator.share({
-                        title: 'ToolsTR QR Kodu',
-                        text: 'Bu QR kodunu ToolsTR ile oluşturdum!',
-                        files: [file]
-                    });
-                } catch (err) {
-                    console.error('Paylaşım hatası:', err);
-                    // Paylaşım iptal edildiğinde veya hata olduğunda
-                }
-            } else {
-                // Tarayıcı paylaşımı desteklemiyorsa
-                alert('Tarayıcınız paylaşım özelliğini desteklemiyor. Resmi indirip manuel paylaşabilirsiniz.');
-            }
-        });
+        // Sayfa yüklendiğinde geçmişi göster
+        renderHistory();
 
     </script>
 </body>
