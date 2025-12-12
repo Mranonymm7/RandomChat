@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - Kronometre</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px 20px;
+        }
+
+        /* --- Ana Sayaç Ekranı --- */
+        .display-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 180px; /* Büyük bir alan */
+            width: 100%;
+            margin-bottom: 30px;
+            background: #111;
+            border-radius: 16px;
+            border: 1px solid #222;
+        }
+        
+        #timerDisplay {
+            font-family: monospace; /* Monospace font ile rakamların sabit genişliği */
+            font-size: 3.8rem;
+            font-weight: 200;
+            letter-spacing: -1px;
+            color: #fff;
+        }
+        
+        .milliseconds {
+            font-size: 1.8rem;
+            color: #aaa;
+        }
+
+        /* --- Kontrol Butonları --- */
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%; /* Dairesel butonlar */
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        
+        .control-btn i {
+            font-size: 1.2rem;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.9);
+            box-shadow: none;
+        }
+
+        /* Buton Renkleri */
+        #startBtn { background-color: #38C760; } /* Yeşil */
+        #stopBtn { background-color: #FF6F61; display: none;} /* Kırmızı */
+        #lapBtn { background-color: #4D96FF; } /* Mavi */
+        #resetBtn { background-color: #333; color: #888; } /* Gri */
+
+        /* Duruma göre görünürlük */
+        .hidden { display: none !important; }
+
+        /* --- Tur (Lap) Listesi --- */
+        .laps-area {
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #222;
+        }
+        
+        #lapsList {
+            list-style: none;
+            padding: 0;
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #1a1a1a;
+            background: #111;
+            transition: background 0.2s;
+        }
+        
+        .lap-item:first-child {
+            background: #1a1a1a; /* En son turu daha belirgin yap */
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .lap-number {
+            font-weight: 600;
+            color: #888;
+        }
+
+        .lap-time {
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        
+        .lap-diff {
+            font-size: 0.9rem;
+            color: #38C760; /* Yeşil */
+            width: 60px;
+            text-align: right;
+        }
+        
+        .lap-slow { color: #FF6F61; } /* Kırmızı */
+        .lap-fast { color: #4D96FF; } /* Mavi */
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR - Kronometre</div>
+    </header>
+
+    <div class="container">
+
+        <div class="display-area">
+            <span id="timerDisplay">00:00<span class="milliseconds">.00</span></span>
+        </div>
+
+        <div class="controls">
+            
+            <button class="control-btn" id="startBtn">
+                <i class="fa-solid fa-play"></i>
+                <span>Başlat</span>
+            </button>
+            <button class="control-btn" id="stopBtn" style="background-color: #FF6F61;">
+                <i class="fa-solid fa-pause"></i>
+                <span>Durdur</span>
+            </button>
+            
+            <button class="control-btn" id="lapBtn">
+                <i class="fa-solid fa-flag"></i>
+                <span>Tur</span>
+            </button>
+            <button class="control-btn" id="resetBtn">
+                <i class="fa-solid fa-redo"></i>
+                <span>Sıfırla</span>
+            </button>
+        </div>
+
+        <div class="laps-area">
+            <div class="section-title">Tur Zamanları</div>
+            <ul id="lapsList">
+                </ul>
+        </div>
+        
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+
+        // --- Durum Değişkenleri ---
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let lapTimes = [];
+        
+        // --- DOM Elemanları ---
+        const displayEl = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const lapBtn = document.getElementById('lapBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lapsListEl = document.getElementById('lapsList');
+
+        // --- Yardımcı Fonksiyonlar ---
+
+        // Milisaniyeyi MM:SS.ms formatına dönüştürür
+        function formatTime(ms) {
+            const date = new Date(ms);
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+            const milliseconds = String(Math.floor(date.getUTCMilliseconds() / 10)).padStart(2, '0'); // Sadece yüzdelik kısım
+
+            return `${minutes}:${seconds}<span class="milliseconds">.${milliseconds}</span>`;
+        }
+        
+        // --- İşlevler ---
+        
+        function updateDisplay() {
+            // elapsedTime sürekli güncellenir
+            const displayHTML = formatTime(elapsedTime);
+            displayEl.innerHTML = displayHTML;
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+
+            isRunning = true;
+            startTime = Date.now() - elapsedTime;
+
+            // Butonları güncelle
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'flex';
+            lapBtn.style.backgroundColor = '#4D96FF'; // Tur butonu aktif
+
+            // Her 10 milisaniyede bir zamanı güncelle
+            timerInterval = setInterval(() => {
+                elapsedTime = Date.now() - startTime;
+                updateDisplay();
+            }, 10);
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function stopTimer() {
+            if (!isRunning) return;
+
+            isRunning = false;
+            clearInterval(timerInterval);
+            
+            // Butonları güncelle
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            lapBtn.style.backgroundColor = '#333'; // Tur butonu pasif
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function resetTimer() {
+            stopTimer(); // Önce durdur
+            
+            startTime = 0;
+            elapsedTime = 0;
+            lapTimes = [];
+            lapsListEl.innerHTML = '';
+            
+            updateDisplay();
+            
+            // Butonları ilk durumuna getir
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            lapBtn.style.backgroundColor = '#333';
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function recordLap() {
+            if (!isRunning) return;
+            
+            const currentLapTime = elapsedTime;
+            const lastLapTime = lapTimes.length > 0 
+                ? lapTimes[lapTimes.length - 1].totalTime 
+                : 0;
+            
+            const lapDuration = currentLapTime - lastLapTime;
+            
+            lapTimes.push({
+                totalTime: currentLapTime,
+                duration: lapDuration
+            });
+
+            renderLaps();
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+        
+        function renderLaps() {
+            const lapsCount = lapTimes.length;
+            lapsListEl.innerHTML = ''; // Listeyi temizle
+
+            let minDuration = Infinity;
+            let maxDuration = -Infinity;
+            
+            if (lapsCount > 1) {
+                // Minimum ve maksimum tur süresini hesapla (ilk tur hariç)
+                lapTimes.slice(1).forEach(lap => {
+                    if (lap.duration < minDuration) minDuration = lap.duration;
+                    if (lap.duration > maxDuration) maxDuration = lap.duration;
+                });
+            }
+
+            // Listeyi tersten (en yeni üste) oluştur
+            for (let i = lapsCount - 1; i >= 0; i--) {
+                const lap = lapTimes[i];
+                const lapNumber = i + 1;
+                
+                let diffClass = '';
+                let diffText = formatTime(lap.duration).replace('<span class="milliseconds">.', '.').replace('</span>', '');
+                
+                // İlk tur için fark gösterme
+                if (lapNumber > 1) {
+                    if (lap.duration === minDuration) {
+                        diffClass = 'lap-fast'; // En hızlı tur
+                    } else if (lap.duration === maxDuration) {
+                        diffClass = 'lap-slow'; // En yavaş tur
+                    }
+                } else {
+                    diffText = '---'; // İlk tur için fark yok
+                }
+
+
+                const item = document.createElement('li');
+                item.className = 'lap-item';
+                item.innerHTML = `
+                    <span class="lap-number">TUR ${lapNumber}</span>
+                    <span class="lap-diff ${diffClass}">${diffText}</span>
+                    <span class="lap-time">${formatTime(lap.totalTime)}</span>
+                `;
+                
+                // En yeni turu en üste ekle
+                lapsListEl.prepend(item); 
+            }
+        }
+        
+        // --- Olay Dinleyicileri ---
+        
+        startBtn.addEventListener('click', startTimer);
+        stopBtn.addEventListener('click', stopTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        lapBtn.addEventListener('click', recordLap);
+
+        // --- Başlangıç ---
+        updateDisplay(); // Sayacı 00:00.00 olarak göster
+        
+        // Başlangıçta Tur ve Sıfırla butonlarının rengi pasif olsun
+        lapBtn.style.backgroundColor = '#333';
+        lapBtn.style.color = '#888';
+        resetBtn.style.backgroundColor = '#333';
+        resetBtn.style.color = '#888';
+
+    </script>
+</body>
+</html>
