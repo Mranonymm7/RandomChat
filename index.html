@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS Reset & Temel Ayarlar --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000; /* Simsiyah Arka Plan */
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header Tasarımı --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px); /* Buzlu cam efekti */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 60%; /* Sağ tarafın genişliğini sınırlar */
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            overflow: hidden; /* Taşmayı gizle */
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;      /* Alt satıra geçme */
+            overflow: hidden;         /* Taşan kısmı gizle */
+            text-overflow: ellipsis;  /* Taşan kısma ... koy */
+            max-width: 100px;         /* İsim için maksimum alan */
+            text-align: right;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background-color: #333;
+        }
+
+        /* --- Ana İçerik ve Grid --- */
+        .container {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        /* --- Tool Buton Tasarımı --- */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobil öncelikli tek sütun */
+            gap: 15px;
+        }
+
+        .tool-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 20px;
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hover ve Active Efektleri */
+        .tool-card:active {
+            transform: scale(0.98);
+            background: #1a1a1a;
+        }
+
+        .tool-card:hover {
+            border-color: #444;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.05);
+        }
+
+        .card-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            background: #fff;
+            color: #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .text-box h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .text-box p {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .arrow-icon {
+            color: #444;
+            transition: transform 0.3s ease;
+        }
+
+        .tool-card:hover .arrow-icon {
+            transform: translateX(5px);
+            color: #fff;
+        }
+
+        /* Yükleniyor efekti */
+        .skeleton {
+            background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+        
+        <div class="user-profile" id="userProfile">
+            <div class="user-info">
+                <span class="user-name" id="userName">Misafir</span>
+            </div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" alt="User" class="user-avatar" id="userAvatar">
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section-title">Araçlar</div>
+
+        <div class="tools-grid">
+            
+            <a href="qr.html" class="tool-card">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>QR Oluşturucu</h3>
+                        <p>Hızlı QR kod üret</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+
+            <a href="not.html" class="tool-card">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>Not Oluştur</h3>
+                        <p>Kişisel notlarını sakla</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+
+            <a href="hava.html" class="tool-card">
+                <div class="card-content">
+                    <div class="icon-box">
+                        <i class="fa-solid fa-cloud-sun"></i>
+                    </div>
+                    <div class="text-box">
+                        <h3>Hava Durumu</h3>
+                        <p>Günlük tahminler</p>
+                    </div>
+                </div>
+                <div class="arrow-icon">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </a>
+
+            </div>
+    </div>
+
+    <script>
+        // Telegram Web App Başlatma
+        const tg = window.Telegram.WebApp;
+
+        // Uygulamayı tam ekran yap
+        tg.expand();
+
+        // Renk şemasını (header bar rengini) ayarla
+        tg.setHeaderColor('#000000'); // Siyah header
+        tg.setBackgroundColor('#000000'); // Siyah arka plan
+
+        // DOM Elemanlarını Seç
+        const userNameEl = document.getElementById('userName');
+        const userAvatarEl = document.getElementById('userAvatar');
+
+        // Kullanıcı verisini al (initDataUnsafe üzerinden)
+        const user = tg.initDataUnsafe.user;
+
+        if (user) {
+            // İsim Gösterimi (Ad veya Username)
+            if (user.first_name) {
+                // Sadece adı göster, eğer soyadı varsa ekle
+                userNameEl.innerText = user.first_name + (user.last_name ? " " + user.last_name : "");
+            } else if (user.username) {
+                userNameEl.innerText = "@" + user.username;
+            }
+
+            // Profil Fotoğrafı Gösterimi (Varsa)
+            if (user.photo_url) {
+                userAvatarEl.src = user.photo_url;
+            } else {
+                // Fotoğraf yoksa varsayılan kalır veya baş harf yapılabilir
+                // Şu an varsayılan placeholder kalıyor.
+            }
+        } else {
+            // Tarayıcıda test ediyorsan burası çalışır
+            console.log("Telegram dışında çalıştırılıyor veya kullanıcı verisi yok.");
+            userNameEl.innerText = "Developer";
+        }
+
+        // Butonlara tıklanınca titreşim (Haptic Feedback) ekle
+        document.querySelectorAll('.tool-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Hafif bir titreşim verir (Sadece mobilde çalışır)
+                if(tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
