@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        header { display: flex; justify-content: center; align-items: center; padding: 15px 20px; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; z-index: 100; height: 60px; }
+        .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; background: linear-gradient(45deg, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .container { padding: 25px 20px; flex: 1; max-width: 500px; margin: 0 auto; width: 100%; }
+        
+        /* Kayıt Alanı */
+        .recording-area { background: #111; border-radius: 15px; padding: 25px; text-align: center; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+        #timer { font-size: 3rem; font-weight: 800; color: #fff; margin-bottom: 15px; display: block; }
+        .recording #timer { color: #FF4D4D; }
+
+        /* Ses Titreşim İbresi */
+        #visualizer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 30px;
+            margin-bottom: 20px;
+        }
+        .bar {
+            width: 4px;
+            height: 4px;
+            background: #4D96FF;
+            margin: 0 1px;
+            border-radius: 2px;
+            transition: height 0.15s ease-out, background 0.3s;
+            display: none; /* Başlangıçta gizli */
+        }
+        .recording .bar {
+            display: inline-block;
+            background: #FF4D4D; /* Kayıt sırasında kırmızı */
+            animation: recordPulse 0.5s infinite alternate;
+        }
+        .bar:nth-child(2n) { animation-delay: -0.2s; }
+        .bar:nth-child(3n) { animation-delay: -0.4s; }
+
+        @keyframes recordPulse {
+            from { height: 4px; }
+            to { height: 25px; }
+        }
+        
+        /* Kontrol Butonları */
+        .controls { display: flex; justify-content: center; gap: 20px; }
+        .control-btn { width: 70px; height: 70px; border-radius: 50%; border: none; color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s, opacity 0.3s; }
+        .control-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        #startStopBtn { background-color: #4D96FF; }
+        .recording #startStopBtn { background-color: #FF4D4D; }
+        #resetBtn { background-color: #333; }
+        
+        /* Kayıt Listesi */
+        .recordings-list h3 { font-size: 1.1rem; color: #ccc; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #222; }
+        #recordingsContainer { list-style: none; padding: 0; display: flex; flex-direction: column-reverse; gap: 10px; }
+        .record-item { 
+            display: flex; 
+            flex-direction: column;
+            background: #1a1a1a; 
+            padding: 10px 15px; 
+            border-radius: 10px; 
+            border-left: 5px solid #4D96FF; 
+            position: relative;
+            overflow: hidden;
+        }
+        .record-content {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             width: 100%;
+             z-index: 10;
+        }
+        .record-info { flex-grow: 1; }
+        .record-item .date { font-size: 0.9rem; color: #ccc; font-weight: 600; }
+        .record-item .duration { font-size: 0.8rem; color: #888; }
+
+        /* Oynatma İbresi (Ses Görselleştirme İbresi) */
+        .play-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0; 
+            background: rgba(77, 150, 255, 0.2); /* Yarı saydam mavi dolgu */
+            transition: width linear;
+            z-index: 1;
+        }
+
+        .record-actions button { background: none; border: none; color: #fff; font-size: 1.1rem; cursor: pointer; margin-left: 10px; opacity: 0.8; transition: opacity 0.2s, color 0.2s; }
+        .record-actions button:hover { opacity: 1; }
+        .record-actions .play-btn { color: #4CAF50; }
+        .record-actions .share-btn { color: #4D96FF; }
+        .record-actions .delete-btn { color: #FF4D4D; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="recording-area" id="recordingArea">
+            <span id="timer">00:00</span>
+            
+            <div id="visualizer">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" id="startStopBtn" title="Kaydı Başlat/Durdur">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+                <button class="control-btn" id="resetBtn" title="Kaydı İptal Et" disabled>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p style="color:#888; font-size:0.85rem; margin-top:20px;" id="statusMessage">Kaydı başlatmak için mikrofona dokunun.</p>
+        </div>
+
+        <div class="recordings-list">
+            <h3><i class="fa-solid fa-list-ul"></i> Kayıtlarım</h3>
+            <ul id="recordingsContainer">
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        try { 
+            if (tg) { 
+                tg.expand(); 
+                tg.setHeaderColor('#000000'); 
+                tg.setBackgroundColor('#000000'); 
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => window.location.href = 'index.html');
+            } 
+        } catch(e){}
+
+        const LOCAL_STORAGE_KEY = 'tools_tr_voice_records';
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordingStartTime;
+        let timerInterval;
+        let currentAudio = null;
+        let isPlaying = false;
+        let currentPlayingItem = null; // Şu an oynatılan kaydın DOM öğesi
+
+        const recordingAreaEl = document.getElementById('recordingArea');
+        const timerEl = document.getElementById('timer');
+        const startStopBtn = document.getElementById('startStopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const recordingsContainerEl = document.getElementById('recordingsContainer');
+        const statusMessageEl = document.getElementById('statusMessage');
+        const visualizerBars = document.querySelectorAll('#visualizer .bar');
+        
+        // Oynatma ibresini güncellemek için aralık
+        let playIndicatorInterval; 
+
+        // --- Veri Dönüşüm Fonksiyonları (Base64 <-> Blob) ---
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+        
+        function base64ToBlob(base64) {
+            const parts = base64.split(';base64,');
+            const contentType = parts[0].split(':')[1];
+            const raw = window.atob(parts[1]);
+            const rawLength = raw.length;
+            const uInt8Array = new Uint8Array(rawLength);
+
+            for (let i = 0; i < rawLength; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+            return new Blob([uInt8Array], { type: contentType });
+        }
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+        
+        function loadRecordings() {
+            const recordsJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+            const records = recordsJSON ? JSON.parse(recordsJSON) : [];
+            renderRecordings(records);
+        }
+
+        function saveRecordings(records) {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(records));
+            loadRecordings();
+        }
+
+        // --- Ses Kayıt İşlemleri ---
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Kayıt başlamadan önce geçmiş chunkları temizle (İptal edildiğinde kalanları engellemek için)
+                audioChunks = []; 
+                
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Mikrofon akışını kapat
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    // Eğer audioChunks boş değilse (iptal edilmediyse) kaydetme işlemini yap
+                    if (audioChunks.length > 0) {
+                        onRecordingStop();
+                    } else {
+                        // İptal durumunda zaten temizlendi
+                        statusMessageEl.textContent = 'Kayıt iptal edildi.';
+                        timerEl.textContent = '00:00';
+                        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                    }
+                };
+
+                mediaRecorder.onstart = () => {
+                    recordingStartTime = Date.now();
+                    recordingAreaEl.classList.add('recording');
+                    updateTimer();
+                    timerInterval = setInterval(updateTimer, 1000);
+                    resetBtn.disabled = false;
+                    startStopBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+                    statusMessageEl.textContent = 'Kayıt Yapılıyor...';
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                };
+                
+                mediaRecorder.start();
+                
+            } catch (err) {
+                statusMessageEl.textContent = `Mikrofon izni gerekli! Hata: ${err.name}`;
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                clearInterval(timerInterval);
+                mediaRecorder.stop();
+                
+                recordingAreaEl.classList.remove('recording');
+                startStopBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                resetBtn.disabled = true;
+            }
+        }
+        
+        async function onRecordingStop() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const base64Data = await blobToBase64(audioBlob);
+            const durationMs = Date.now() - recordingStartTime;
+            const durationSec = Math.round(durationMs / 1000);
+
+            if (durationSec > 0) {
+                const newRecord = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString('tr-TR'),
+                    duration: formatTime(durationSec),
+                    data: base64Data
+                };
+                
+                const recordsJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const records = recordsJSON ? JSON.parse(recordsJSON) : [];
+                records.push(newRecord);
+                saveRecordings(records);
+            } else {
+                 statusMessageEl.textContent = 'Kısa kayıt iptal edildi.';
+            }
+            
+            timerEl.textContent = '00:00';
+            audioChunks = []; // Kayıt tamamlandı, temizle
+        }
+
+        function updateTimer() {
+            const elapsed = Math.round((Date.now() - recordingStartTime) / 1000);
+            timerEl.textContent = formatTime(elapsed);
+        }
+
+        // --- DOM Render ve Olay İşleyicileri ---
+
+        function renderRecordings(records) {
+            recordingsContainerEl.innerHTML = '';
+            if (records.length === 0) {
+                recordingsContainerEl.innerHTML = '<li style="color:#888; text-align:center; padding:10px;">Henüz kayıt yok.</li>';
+                return;
+            }
+            
+            records.forEach(record => {
+                const listItem = document.createElement('li');
+                listItem.className = 'record-item';
+                listItem.id = `record-${record.id}`;
+
+                listItem.innerHTML = `
+                    <div class="play-indicator" id="indicator-${record.id}"></div>
+                    <div class="record-content">
+                        <div class="record-info">
+                            <div class="date">${record.date}</div>
+                            <div class="duration">${record.duration}</div>
+                        </div>
+                        <div class="record-actions">
+                            <button class="play-btn" data-id="${record.id}" title="Dinle"><i class="fa-solid fa-play"></i></button>
+                            <button class="share-btn" data-id="${record.id}" title="Paylaş"><i class="fa-brands fa-telegram"></i></button>
+                            <button class="delete-btn" data-id="${record.id}" title="Sil"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                `;
+                recordingsContainerEl.prepend(listItem);
+            });
+            
+            document.querySelectorAll('.play-btn').forEach(btn => btn.addEventListener('click', handlePlay));
+            document.querySelectorAll('.share-btn').forEach(btn => btn.addEventListener('click', handleShare));
+            document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', handleDelete));
+        }
+
+        startStopBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                // Kayıt durdurulur ve mediaRecorder.onstop tetiklenir
+                stopRecording();
+                // onstop tetiklenmeden önce audioChunks'ı temizle
+                audioChunks = []; 
+            }
+        });
+        
+        // --- Oynatma İbresi Güncelleyici ---
+        function updatePlayIndicator() {
+            if (!currentAudio || !currentPlayingItem) return;
+            
+            const indicatorEl = currentPlayingItem.querySelector('.play-indicator');
+            const duration = currentAudio.duration;
+            const currentTime = currentAudio.currentTime;
+
+            if (duration > 0) {
+                const percent = (currentTime / duration) * 100;
+                indicatorEl.style.width = `${percent}%`;
+            }
+        }
+
+        function stopCurrentPlayback() {
+             clearInterval(playIndicatorInterval);
+             if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+             }
+             document.querySelectorAll('.play-btn').forEach(btn => btn.innerHTML = '<i class="fa-solid fa-play"></i>');
+             if (currentPlayingItem) {
+                const indicatorEl = currentPlayingItem.querySelector('.play-indicator');
+                indicatorEl.style.width = '0%';
+                currentPlayingItem = null;
+             }
+             isPlaying = false;
+        }
+
+        function handlePlay(e) {
+            const id = parseInt(e.currentTarget.dataset.id);
+            const records = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const record = records.find(r => r.id === id);
+            const playBtn = e.currentTarget;
+            const listItem = document.getElementById(`record-${id}`);
+            
+            if (!record) return;
+
+            // Eğer aynı sesi oynatıyorsa veya durduysa: Durdur ve ibreyi resetle
+            if (isPlaying && currentPlayingItem === listItem) {
+                 stopCurrentPlayback();
+                 return;
+            }
+            
+            // Başka bir ses çalınıyorsa durdur
+            stopCurrentPlayback();
+            
+            try {
+                const audioBlob = base64ToBlob(record.data);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                currentAudio = new Audio(audioUrl);
+                currentPlayingItem = listItem; // Yeni oynatılan öğeyi kaydet
+                
+                playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                isPlaying = true;
+                
+                currentAudio.play();
+                
+                // İbreyi başlat
+                playIndicatorInterval = setInterval(updatePlayIndicator, 50); 
+                
+                currentAudio.onended = () => {
+                    stopCurrentPlayback();
+                    URL.revokeObjectURL(audioUrl);
+                };
+
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+            } catch (error) {
+                console.error('Ses oynatma hatası:', error);
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+        
+        function handleShare(e) {
+            const id = parseInt(e.currentTarget.dataset.id);
+            const records = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const record = records.find(r => r.id === id);
+            
+            if (!record) return;
+            stopCurrentPlayback(); // Paylaşmadan önce çalmayı durdur
+
+            const audioBlob = base64ToBlob(record.data);
+            const fileName = `ToolsTR_Ses_Kaydı_${id}.webm`;
+            const audioFile = new File([audioBlob], fileName, { type: audioBlob.type });
+
+            
+            if (navigator.share) {
+                 navigator.share({
+                    files: [audioFile],
+                    title: 'Ses Kaydım',
+                    text: `ToolsTR Ses Kaydedici ile kaydedildi. Süre: ${record.duration}`
+                 }).catch(error => {
+                     console.error('Paylaşım hatası:', error);
+                     alert('Paylaşım başarısız oldu. Dosya paylaşımı API tarafından engelleniyor olabilir.');
+                 });
+            } else {
+                const url = URL.createObjectURL(audioFile);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                statusMessageEl.textContent = 'Dosya indirildi. Lütfen cihazınızdan manuel olarak paylaşın.';
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            }
+        }
+
+        function handleDelete(e) {
+            const id = parseInt(e.currentTarget.dataset.id);
+            if (confirm('Bu kaydı kalıcı olarak silmek istediğinizden emin misiniz?')) {
+                const recordsJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+                let records = recordsJSON ? JSON.parse(recordsJSON) : [];
+                
+                records = records.filter(r => r.id !== id);
+                saveRecordings(records);
+                
+                // Silinen kayıt çalınıyorsa durdur
+                const deletedItem = document.getElementById(`record-${id}`);
+                if (currentPlayingItem === deletedItem) {
+                     stopCurrentPlayback();
+                }
+
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        loadRecordings();
+    </script>
+</body>
+</html>
