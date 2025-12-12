@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - Haberler</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Durum Mesajları --- */
+        #loading, #error-message {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-style: italic;
+        }
+
+        #loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        /* --- Haber Kartları --- */
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .news-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            overflow: hidden;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .news-card:hover {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Haber Başlık Alanı (Tıklama Alanı) */
+        .card-header-toggle {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-text {
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+        
+        .toggle-icon {
+            font-size: 1rem;
+            color: #888;
+            transition: transform 0.3s;
+        }
+        
+        /* Genişletilmiş Durumda İkon Döndürme */
+        .news-card.active .toggle-icon {
+            transform: rotate(180deg);
+            color: #fff;
+        }
+        
+        /* Haber Bilgileri (Kaynak ve Tarih) */
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px dashed #222;
+        }
+
+        /* Genişletilmiş İçerik Alanı (Accordion) */
+        .full-content {
+            padding: 0 15px 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px solid #222;
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Genişletilmiş Durum */
+        .news-card.active .full-content {
+            max-height: 5000px;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        
+        /* Görsel Alanı */
+        .card-image-wrapper {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            border-bottom: 1px solid #222;
+        }
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* İçerik Düzeni */
+        .full-content p, 
+        .full-content div {
+            margin-bottom: 10px;
+        }
+        
+        .full-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border-radius: 8px;
+        }
+        
+        /* Kaynak Seçimi */
+        #sourceSelect {
+            padding: 8px 15px;
+            background-color: #111;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="12" width="12" viewBox="0 0 448 512" fill="%23FFFFFF"><path d="M201.4 342.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 294.7 86.6 157.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        
+        <select id="sourceSelect"></select>
+
+        <div id="loading"><i class="fa-solid fa-spinner"></i> Güncel haberler yükleniyor...</div>
+        <div id="error-message" style="display: none;"></div>
+
+        <div class="news-list" id="newsList">
+            </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => window.location.href = 'index.html');
+
+        // --- Sabitler ---
+        // Sözcü kaldırıldı. Hürriyet başlangıç kaynağı olacak.
+        const RSS_FEEDS = {
+            'Hürriyet (Gündem)': 'https://www.hurriyet.com.tr/rss/gundem',
+            'Anadolu Ajansı (Gündem)': 'https://www.aa.com.tr/tr/rss/default?cat=guncel', 
+            'BBC Türkçe (Manşet)': 'http://feeds.bbci.co.uk/turkce/rss.xml',
+        };
+        
+        // BAŞLANGIÇTA YÜKLENECEK KAYNAK: Hürriyet
+        const INITIAL_FEED_KEY = 'Hürriyet (Gündem)'; 
+        
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json';
+        
+        // --- DOM Elemanları ---
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error-message');
+        const newsListEl = document.getElementById('newsList');
+        const sourceSelectEl = document.getElementById('sourceSelect');
+        
+        // --- Değişkenler ---
+        let activeFeedUrl = RSS_FEEDS[INITIAL_FEED_KEY]; 
+
+        // --- Durum Yönetimi ---
+        const setLoading = (show, message = null) => {
+            if (message) loadingEl.innerHTML = `<i class="fa-solid fa-spinner"></i> ${message}`;
+            loadingEl.style.display = show ? 'block' : 'none';
+            errorEl.style.display = 'none';
+            if (show) newsListEl.innerHTML = '';
+        };
+
+        const showError = (message) => {
+            setLoading(false);
+            errorEl.innerHTML = `
+                <i class="fa-solid fa-circle-exclamation" style="margin-right: 5px;"></i> 
+                **Hata:** ${message}
+            `;
+            errorEl.style.display = 'block';
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+        };
+
+        // --- Yardımcı Fonksiyonlar ---
+
+        function formatTurkishDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            try {
+                 return new Date(dateString).toLocaleDateString('tr-TR', options);
+            } catch (e) {
+                 return 'Tarih Bilinmiyor';
+            }
+        }
+        
+        /**
+         * RSS içeriğinden görsel bağlantısını ve temizlenmiş tam içeriği ayıklar.
+         */
+        function extractContentAndImage(item) {
+            const rawContent = item.content || item.description || '';
+            let imageUrl = null;
+            let finalContent = rawContent;
+            
+            // 1. Enclosure alanını kontrol et
+            if (item.enclosure && item.enclosure.link) {
+                imageUrl = item.enclosure.link;
+            }
+
+            // 2. Content/Description alanındaki ilk <img> etiketini arar
+            if (!imageUrl) {
+                 const imgMatch = rawContent.match(/<img[^>]+src="([^">]+)"/i);
+                 if (imgMatch && imgMatch[1]) {
+                     imageUrl = imgMatch[1];
+                     // Eğer görsel içerikteyse, onu içerikten temizle
+                     finalContent = finalContent.replace(/<img[^>]*>/i, '').trim(); 
+                 }
+            }
+            
+            // 3. İçerikteki zararlı etiketleri temizle
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = finalContent;
+            tempDiv.querySelectorAll('script, style, iframe').forEach(el => el.remove());
+            
+            let innerHTML = tempDiv.innerHTML.trim();
+            
+            return { imageUrl, cleanedContent: innerHTML };
+        }
+
+        // --- RSS Çekme İşlevi ---
+        async function fetchNews() {
+            setLoading(true, 'Güncel haberler yükleniyor...');
+            
+            const apiUrl = `${RSS2JSON_API}?rss_url=${encodeURIComponent(activeFeedUrl)}`;
+            
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Ağ bağlantısı başarısız. Durum kodu: ${response.status}`);
+                }
+                
+                const data = await response.json();
+
+                if (data.status !== 'ok') {
+                    throw new Error(data.message || 'RSS içeriği alınamadı.');
+                }
+                
+                if (data.items && data.items.length > 0) {
+                    renderNews(data.items, data.feed.title || 'Kaynak Bilinmiyor');
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                } else {
+                    showError('Haber bulunamadı.');
+                }
+
+            } catch (error) {
+                showError(`Haber çekilemedi: ${error.message}.`);
+                console.error('News fetch error:', error);
+            }
+        }
+
+        // --- Sonuçları Ekrana Basma (Render) ---
+        function renderNews(items, sourceTitle) {
+            setLoading(false);
+            newsListEl.innerHTML = '';
+            
+            items.forEach(item => {
+                const { imageUrl, cleanedContent } = extractContentAndImage(item);
+                
+                const cardHTML = `
+                    <div class="news-card">
+                        
+                        ${imageUrl ? 
+                            `<div class="card-image-wrapper">
+                                <img src="${imageUrl}" class="card-image" alt="${item.title}" onerror="this.onerror=null;this.closest('.card-image-wrapper').remove();">
+                            </div>` : 
+                            '' // Görsel yoksa boş bırak
+                        }
+                        
+                        <div class="card-header-toggle">
+                            <div class="header-text">
+                                <h2 class="card-title">${item.title}</h2>
+                                <div class="card-footer">
+                                    <span class="card-source"><i class="fa-solid fa-bookmark"></i> ${sourceTitle}</span>
+                                    <span class="card-date"><i class="fa-solid fa-clock"></i> ${formatTurkishDate(item.pubDate)}</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                        </div>
+
+                        <div class="full-content">
+                            ${cleanedContent || '<p>Bu haberin tam metni RSS beslemesinde bulunmamaktadır. Lütfen orijinal kaynağı kontrol edin.</p>'}
+                        </div>
+                    </div>
+                `;
+                
+                newsListEl.insertAdjacentHTML('beforeend', cardHTML);
+            });
+            
+            // Haber kartlarına tıklama olayını ekle
+            document.querySelectorAll('.news-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    if (this.classList.contains('active') && tg.HapticFeedback) {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
+                });
+            });
+        }
+        
+        // --- Kaynak Seçimi Fonksiyonları ---
+
+        function populateSourceSelect() {
+            for (const name in RSS_FEEDS) {
+                const option = document.createElement('option');
+                option.value = RSS_FEEDS[name];
+                option.textContent = name;
+                sourceSelectEl.appendChild(option);
+            }
+            // Başlangıçta Hürriyet'i seçili yap
+            sourceSelectEl.value = activeFeedUrl; 
+        }
+
+        function handleSourceChange(e) {
+            activeFeedUrl = e.target.value;
+            fetchNews(); // Yeni kaynaktan haberleri çek
+        }
+        
+        // --- Uygulama Başlangıcı ---
+        
+        // 1. Kaynak seçimi kutusunu doldur
+        populateSourceSelect();
+        
+        // 2. Kaynak değişim dinleyicisini ekle
+        sourceSelectEl.addEventListener('change', handleSourceChange);
+
+        // 3. Haberleri çek (Hürriyet'ten başlayacak)
+        fetchNews();
+
+    </script>
+</body>
+</html>
