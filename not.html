@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ToolsTR - Notlarım</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Ana Tema Ayarları --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header ve Başlık --- */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- İçerik Alanı --- */
+        .container {
+            padding: 25px 20px;
+            flex: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Input Alanı (Not Ekleme) --- */
+        .note-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: #111;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #222;
+        }
+
+        .note-input-area input {
+            padding: 12px 15px;
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .note-input-area textarea {
+            padding: 12px 15px;
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .note-input-area input:focus, 
+        .note-input-area textarea:focus {
+            border-color: #fff;
+            outline: none;
+        }
+
+        /* --- Ana Buton (Not Ekle) --- */
+        .btn-main {
+            width: 100%;
+            padding: 14px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-main:active {
+            transform: scale(0.98);
+        }
+
+        /* --- Not Listesi Tasarımı --- */
+        .section-title {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-top: 1px solid #222;
+            padding-top: 25px;
+        }
+
+        #notesList {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .note-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+        
+        .note-card:hover {
+             border-color: #444;
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .note-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        .note-content {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.4;
+            max-height: 100px; /* Önizleme için maksimum yükseklik */
+            overflow: hidden;
+            word-wrap: break-word;
+            margin-bottom: 15px;
+        }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #222;
+            padding-top: 10px;
+        }
+
+        .note-timestamp {
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ff3b30; /* Kırmızı renk */
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.85);
+        }
+
+        .empty-notes {
+            text-align: center;
+            color: #666;
+            padding: 40px 0;
+            font-style: italic;
+            border: 1px dashed #333;
+            border-radius: 12px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">ToolsTR</div>
+    </header>
+
+    <div class="container">
+        
+        <div class="note-input-area">
+            <input type="text" id="noteTitle" placeholder="Not Başlığı (Zorunlu)" maxlength="50">
+            <textarea id="noteContent" placeholder="Notunuzun içeriğini buraya yazın..." rows="5"></textarea>
+            
+            <button class="btn-main" id="addNoteBtn">
+                <i class="fa-solid fa-plus"></i>
+                Notu Kaydet
+            </button>
+        </div>
+
+        <div class="notes-list-section">
+            <div class="section-title">Kaydedilmiş Notlar</div>
+            <div id="notesList">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
+
+        // Geri Butonu: Sol üstte görünmesini ve index.html'ye dönmesini sağlar.
+        tg.BackButton.show();
+        tg.BackButton.onClick(function() {
+            window.location.href = 'index.html';
+        });
+
+        // --- DOM Elemanları ve Anahtar ---
+        const NOTES_KEY = 'toolsTR_user_notes';
+        const noteTitleEl = document.getElementById('noteTitle');
+        const noteContentEl = document.getElementById('noteContent');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const notesListEl = document.getElementById('notesList');
+
+        // --- Yardımcı Fonksiyonlar ---
+
+        // Unix zaman damgasını okunabilir formata çevirir (Örn: 10 Mart, 14:30)
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const options = { 
+                day: 'numeric', 
+                month: 'short', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            };
+            return date.toLocaleString('tr-TR', options);
+        }
+
+        // --- LOCAL STORAGE Fonksiyonları ---
+
+        // Tüm notları Local Storage'dan yükler
+        function loadNotes() {
+            const notes = localStorage.getItem(NOTES_KEY);
+            // Tarih sırasına göre tersten sıralar (en yeni üste)
+            return notes ? JSON.parse(notes).sort((a, b) => b.timestamp - a.timestamp) : [];
+        }
+
+        // Notları Local Storage'a kaydeder
+        function saveNotes(notes) {
+            localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+        }
+
+        // --- Ana İşlevler ---
+
+        // Notu Ekleme
+        function addNote() {
+            const title = noteTitleEl.value.trim();
+            const content = noteContentEl.value.trim();
+
+            if (!title) {
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                tg.showPopup({
+                    title: 'Hata',
+                    message: 'Lütfen bir başlık giriniz.'
+                });
+                noteTitleEl.focus();
+                return;
+            }
+
+            const newNote = {
+                id: Date.now(), // Eşsiz ID olarak zaman damgası
+                title: title,
+                content: content || 'İçerik yok.',
+                timestamp: Date.now()
+            };
+
+            const notes = loadNotes();
+            notes.push(newNote);
+            saveNotes(notes);
+
+            // Inputları temizle ve klavyeyi kapat
+            noteTitleEl.value = '';
+            noteContentEl.value = '';
+            noteContentEl.blur(); 
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            renderNotes();
+        }
+
+        // Notu Silme
+        function deleteNote(id) {
+            let notes = loadNotes();
+            
+            // Notu ID'sine göre filtrele
+            notes = notes.filter(note => note.id !== id);
+            saveNotes(notes);
+            
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            renderNotes();
+        }
+
+        // Notları Ekranda Göster (Render)
+        function renderNotes() {
+            notesListEl.innerHTML = '';
+            const notes = loadNotes();
+
+            if (notes.length === 0) {
+                notesListEl.innerHTML = '<div class="empty-notes">Henüz kaydedilmiş notunuz bulunmamaktadır.</div>';
+                return;
+            }
+
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                card.id = `note-${note.id}`;
+
+                card.innerHTML = `
+                    <div class="note-header">
+                        <div class="note-title">${note.title}</div>
+                        <button class="delete-btn" data-id="${note.id}" title="Notu Sil">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <div class="note-content">${note.content}</div>
+                    <div class="note-footer">
+                        <span class="note-timestamp">
+                            <i class="fa-solid fa-clock"></i> ${formatTimestamp(note.timestamp)}
+                        </span>
+                    </div>
+                `;
+
+                notesListEl.appendChild(card);
+            });
+
+            // Silme butonlarına olay dinleyicisi ekle
+            notesListEl.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    // Silme onayı iste
+                    tg.showPopup({
+                        title: 'Emin misiniz?',
+                        message: 'Bu not kalıcı olarak silinecektir.',
+                        buttons: [
+                            {id: 'delete', type: 'destructive', text: 'Sil'},
+                            {id: 'cancel', type: 'cancel', text: 'İptal'}
+                        ]
+                    }, (buttonId) => {
+                        if (buttonId === 'delete') {
+                            deleteNote(id);
+                        }
+                    });
+                });
+            });
+        }
+
+        // --- Olay Dinleyicileri ---
+        addNoteBtn.addEventListener('click', addNote);
+
+        // Enter tuşuyla kaydetme
+        noteContentEl.addEventListener('keypress', function(e) {
+             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { 
+                e.preventDefault(); 
+                addNote();
+            }
+        });
+        
+        // --- Uygulama Başlangıcı ---
+        renderNotes();
+        
+    </script>
+</body>
+</html>
